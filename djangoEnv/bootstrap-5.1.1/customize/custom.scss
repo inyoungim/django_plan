@@ -1,0 +1,28 @@
+/*! Bootstrap 5 custom build by Themestr.app */
+
+$blue:#3373cc;
+
+$font-size-root:10pt;
+
+/*! Import Bootstrap 5 variables */
+@import "../bootstrap-5.1.1/scss/functions";
+@import "../bootstrap-5.1.1/scss/variables";
+
+// These are the defaults, but you can override any values
+$font-family-sans-serif:system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "굴림", gulim , seoul, Arial, "Noto Sans", "Liberation Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", "굴림";
+
+$theme-colors:( "primary":$primary, "secondary":$secondary, "success":$success, 
+                "info":$info, "warning":$warning, "danger":$danger, "light":$light, "dark":$dark, 
+        "blue":$blue, "lightblue":$blue-300, "darkblue":$blue-700,
+        "purple":$purple, "lightpurple":$purple-300, "darkpurple":$purple-700,
+        "red":$red, "lightred":$red-300, "darkred":$red-700,
+        "orange":$orange, "lightorange":$orange-300, "darkorange":$orange-700,
+        "green":$green, "lightgreen":$green-300,"darkgreen":$green-700,
+        "cyan":$cyan, "lightcyan":$cyan-300, "darkcyan":$cyan-700,
+        "yellow":$yellow, "lightyellow":$yellow-300, "darkyellow":$yellow-700,
+        "gray":$gray-500, "lightgray":$gray-300, "darkgray":$gray-700
+    );
+
+$pagination-hover-bg: $gray-500;
+
+@import "../bootstrap-5.1.1/scss/bootstrap";

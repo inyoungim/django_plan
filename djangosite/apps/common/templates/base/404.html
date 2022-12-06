@@ -1,0 +1,28 @@
+{% extends "base/base_blank.html" %}
+
+{% block content %}
+<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" style="height:90vh">
+    <div class="modal-content text-center">
+        <div class="modal-header" style="background-color:#FF5555">
+            <h1 class="modal-title w-100 text-light">404</h1>
+        </div>
+
+        <div class="modal-body">
+            <div class="d-flex align-items-center" style="min-height:200px;">
+                <div class="w-100">
+                    <h4><font color="#888888">This page does not exist.</font></h4>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <div class="col">
+                <h6>Contact system admin.</h6>
+            </div>
+            <div class="ms-auto">
+                <a class="btn btn-primary btn-sm" href="{{request.preset.root_site}}">Go to Home</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

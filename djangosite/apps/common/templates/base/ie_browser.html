@@ -1,0 +1,39 @@
+{% load static %}
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>R&D System</title>
+    <link href="{% static 'css/bootstrap.custom-v2.css' %}" rel="stylesheet" />
+    <link href="{% static 'css/styles_v2.css' %}" rel="stylesheet" />
+    <link ref="favicon" href="{% static 'assets/favicon.ico' %}" />
+</head>
+<body>
+    <br><br><br>
+    <div class="container px-1 px-lg-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered" style="width:800px; height:90vh;">
+              <div class="modal-content text-center">
+                  <div class="modal-header" style="background-color:#FF5555">
+                      <h1 class="modal-title w-100 text-light">Browser Error</h1>
+                  </div>
+                  <div class="modal-body">
+                      <div class="d-flex align-items-center" style="min-height:200px;">
+                          <div class="w-100">
+                              <br><br><br>
+                              <h4><font color="#888888">This Browser is not supported.</font></h4>
+                              <h4><font color="#888888">(크롬 브라우저를 이용해 주시기 바랍니다.)</font></h4>
+                          </div>
+                      </div>
+                  </div>
+                  <div class="modal-footer">
+                      <div class="w-100">
+                          <h6>Contact system admin.</h6>
+                      </div>
+                  </div>
+              </div>
+        </div>
+    </div>
+</body>
+
+</html>

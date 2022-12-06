@@ -1,0 +1,109 @@
+{% extends "base/base.html" %}
+{% load static %}
+{% load commonModal %}
+
+{% block content %}
+{% common_dialog %}
+<div class="container px-0" id="vue3-top-object">
+    <div class="callout callout-primary mb-3">
+        {% if request.preset.user_lang == 'kr' %}
+            <strong>임의 사용자 로그인 기능</strong>
+            <br>사용자 검색 후 해당 사용자로 로그인 하였을때와 동일한 환경으로 Test 를 할 수 있습니다.
+        {% else %}
+            <strong>Special user login function</strong>
+            <br>After search special user and switch one, same environment load of him.
+        {% endif %}
+    </div>
+
+    <div class="m-1 p-2 bg-primary bg-opacity-25">
+        <i class="bi bi-justify p-1"></i><b>User Search</b>
+    </div>
+    <div class="mx-0 p-1 mb-2" style="min-height:200px;">
+        <div class="hstack justify-content-end mb-1">
+            <div>
+                <input type="text" class="form-control col" style="padding:0.1em 0.5em;"
+                        v-model="search_text" @keyup.enter="searchUser">
+            </div>
+            <div class="btn btn-primary ms-2" style="width:100px; padding:0.1em 0.5em;" @click="searchUser">Search</div>
+        </div>
+
+        <div class="overflow-auto" style="min-height:150px;">
+            <div class="hstack align-middle pt-1 pb-2 px-2 overflow-hidden bg-primary opacity-50 border border-dark">
+                <div class="col-auto me-2"><i class="bi bi-person-fill"></i></div>
+                <div class="col text-white me-2"> User Name </div>
+                <div class="col text-white me-2"> Email </div>
+                <div class="col text-white me-2 overflow-hidden"> Organization </div>
+                {% if request.preset.user_lang == 'kr' and request.preset.user_type != '' %}
+                <div class="col text-white text-center" > Birthday </div>
+                {% endif %}
+            </div>
+
+            <div v-for="user in searchList" class="border">
+                <div class="hstack align-middle pt-1 pb-2 px-2 overflow-hidden"
+                    @click="switchUser(user)" style="cursor:pointer">
+                    <div class="col-auto me-2" style="color:#AAAAFF"><i class="bi bi-person-fill"></i></div>
+                    {% if request.preset.user_lang == 'kr' %}
+                        <div class="col me-2" style="max-width:200px;"> [[ user.FULL_NAME ]] [[ user.JIKWI_NAME ]] </div>
+                        <div class="col me-2" style="max-width:250px;"> [[ user.EMAIL ]] </div>
+                        <div class="col me-2 overflow-hidden" style="max-width:250px;"> [[ user.OLD_ORG_NAME ]] </div>
+                    {% else %}
+                        <div class="col me-2" style="max-width:200px;"> [[ user.NAME_ENG ]] [[ user.JIKWI_NAME_ENG ]] </div>
+                        <div class="col me-2" style="max-width:250px;"> [[ user.EMAIL ]] </div>
+                        <div class="col me-2 overflow-hidden" style="max-width:250px;"> [[ user.ORGAN_NAME_ENG ]] </div>
+                    {% endif %}
+
+                    {% if request.preset.user_lang == 'kr' and request.preset.user_type != '' %}
+                    <div class="col-auto overflow-hidden" > [[ user.BIRTH_DATE ]] ([[ user.AGE ]]) </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div v-if="searchList.length == 0" class="d-flex border" style="min-height:50px;">
+                <div class="w-100 align-self-center text-center">There is no data.</div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<script>
+axios.defaults.xsrfCookieName = 'csrftoken';
+axios.defaults.xsrfHeaderName = 'X-CSRFToken';
+warningModal.set_type('Error');
+warningModal.set_title('Server Error');
+
+Vue.createApp({
+    delimiters: ['[[', ']]'],
+    data: function() {
+        return {
+            search_text : '',
+            searchList : [],
+        };
+    },
+    methods: {
+        async searchUser(){
+            loadingModalEl.show();
+            var vm = this;
+            await axios.get('./api/userinfo', { params:{ 'search_text': vm.search_text }, })
+                .then(function(res){
+                    if(res.data.searchList)
+                        vm.searchList = res.data.searchList;
+                    else
+                        warningModal.show_modal(res.data);
+                })
+                .catch(function(err){
+                    warningModal.show_modal(err);
+                });
+            loadingModalEl.hide();
+        },
+        switchUser(user){
+            document.location.href="/{{request.preset.site}}/?su="+ user.EMPLOYEE_NUMBER;
+        },
+    },
+
+}).mount('#vue3-top-object')
+
+</script>
+
+{% endblock %}

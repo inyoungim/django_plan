@@ -1,0 +1,189 @@
+{% extends "base/base.html" %}
+{% load static %}
+{% load commonModal %}
+
+{% block content %}
+{% common_dialog %}
+
+<link rel="stylesheet" href="/static/keditor/css/editor.min.css?open&_ver=3.0" type="text/css" charset="utf-8"/>
+<script src="/static/keditor/js/jquery-3.1.1.min.js" type="text/javascript" charset="utf-8"></script>
+<script> window._I18N_KEY = '_i18n_editor'; </script>
+<script src="/static/keditor/lang/i18n_editor_ko.js?open&_ver=3.0" type="text/javascript" charset="utf-8"></script>
+<script src="/static/keditor/js/editor_loader.min.js?open&_ver=3.0&i18n=_i18n_editor" type="text/javascript" charset="utf-8"></script>
+<script src="/static/keditor/js/deployJava.min.js?open&_ver=3.0" type="text/javascript" charset="utf-8"></script>
+<script src="/static/keditor/js/image_uploader.min.js?open&_ver=3.0" type="text/javascript" charset="utf-8"></script>
+<script src="/static/keditor/js/keditor.js?open&_ver=3.0" type="text/javascript" charset="utf-8"></script>
+
+
+<div class="container px-0" id="vue3-top-object" v-cloak>
+
+    <div id="editor_wrapper"></div>
+    <form name="keditor_form"></form>
+
+    <button class="btn btn-primary m-1" type="button" @click="setHtml">본문 내용 추가하기</button>
+    <button class="btn btn-primary m-1" type="button" @click="getHtml">본문 내용 가져오기</button>
+    <button class="btn btn-primary m-1" type="button" @click="changeHeight">Change Height</button>
+
+    <div class="my-3 border"> [[ keditor_html ]] [[ getHeight ]]</div>
+
+
+
+
+    <div class="accordion">
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button " type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne">
+                    Button List : accordion-button (collapsed)     [[ mode ]]
+                </button>
+            </h2>
+            <div id="collapseOne" class="accordion-collapse collapse show">
+                <div class="accordion-body">
+
+                    <div class="container">
+                        <div class="row gx-2">
+                            <div>
+                                <button type="button" class="col-1 btn btn-primary border-top-0 border-start-0 border-2 border-darkblue rounded shadow">Primary</button>
+                                <button type="button" class="col-1 btn btn-secondary">Secondary</button>
+                                <button type="button" class="col-1 btn btn-success">Success</button>
+                                <button type="button" class="col-1 btn btn-danger">Danger</button>
+                                <button type="button" class="col-1 btn btn-warning">Warning</button>
+                                <button type="button" class="col-1 btn btn-info">Info</button>
+                                <button type="button" class="col-1 btn btn-light">Light</button>
+                                <button type="button" class="col-1 btn btn-dark">Dark</button>
+                                <button type="button" class="col-1 btn btn-link">Link</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <br>
+
+                    <div class="container">
+                        <div class="row gx-2">
+                            <div>
+                                <button type="button" class="col-1 btn btn-lightblue">LightBlue</button>
+                                <button type="button" class="col-1 btn btn-lightgray">LightGray</button>
+                                <button type="button" class="col-1 btn btn-lightgreen">LightGreen</button>
+                                <button type="button" class="col-1 btn btn-lightred">LightRed</button>
+                                <button type="button" class="col-1 btn btn-lightyellow">LightYellow</button>
+                                <button type="button" class="col-1 btn btn-lightcyan">LightCyan</button>
+                                <button type="button" class="col-1 btn btn-lightpurple">LightPurple</button>
+                                <button type="button" class="col-1 btn btn-lightorange">LightOrange</button>
+                            </div>
+                        </div>
+                        <div class="row my-1"></div>
+                        <div class="row gx-2">
+                            <div>
+                                <button type="button" class="col-1 btn btn-blue">Blue</button>
+                                <button type="button" class="col-1 btn btn-gray">Gray</button>
+                                <button type="button" class="col-1 btn btn-green">Green</button>
+                                <button type="button" class="col-1 btn btn-red">Red</button>
+                                <button type="button" class="col-1 btn btn-yellow">Yellow</button>
+                                <button type="button" class="col-1 btn btn-cyan">Cyan</button>
+                                <button type="button" class="col-1 btn btn-purple">Purple</button>
+                                <button type="button" class="col-1 btn btn-orange">Orange</button>
+                            </div>
+                        </div>
+                        <div class="row my-1"></div>
+                        <div class="row gx-2">
+                            <div>
+                                <button type="button" class="col-1 btn btn-darkblue">DarkBlue</button>
+                                <button type="button" class="col-1 btn btn-darkgray">DarkGray</button>
+                                <button type="button" class="col-1 btn btn-darkgreen">DarkGreen</button>
+                                <button type="button" class="col-1 btn btn-darkred">DarkRed</button>
+                                <button type="button" class="col-1 btn btn-darkyellow">DarkYellow</button>
+                                <button type="button" class="col-1 btn btn-darkcyan">DarkCyan</button>
+                                <button type="button" class="col-1 btn btn-darkpurple">DarkPurple</button>
+                                <button type="button" class="col-1 btn btn-darkorange">DarkOrange</button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+</div>
+
+<script>
+Vue.createApp({
+    delimiters: ['[[', ']]'],
+    components: {    },
+    data(){
+        return {
+            mode : "view",
+            bodyMessage : "",
+            keditor_html : "",
+            keditor : {},
+            keditor_height : 200,
+        }
+    },
+    mounted(){
+        this.keditor =
+            KEditor.build({
+                'instanceId':'1',
+                'wrapper':'#editor_wrapper',
+                'form':document.forms[0].name,
+                'iconPath':'/static/keditor/images/icon/editor',
+                'decoPath':'/static/keditor/images/deco/contents',
+                'skinPath':'/static/keditor/images/icon/editor/skin/01',
+                'imageLinkKey':' ',
+                //'imageUploader':window.ImageUploader,
+                'imageUploadPath': function(type) {
+                    var path = '';
+                    if (type == 'paste') {
+                        // 붙여넣기 이벤트시 호출되는 URL
+                        // path = '/cgi/KEditorFileUpload.none.py?OpenForm&ImageLinkKey=' + window._KEDITOR_ImageLinkKey + '&type=CONTROL';
+                            path = '';
+                    } else {
+                        // 이미지 삽입 레이어에서 호출되는 URL
+                        path = '/' + window._KEDITOR_BASE_PATH + '/pages/ImageuploadPage.html?OpenForm&ImageLinkKey=' + window._KEDITOR_ImageLinkKey;
+                    }
+                    return path;
+                },
+                'beforeSaveDom':function(dom){
+                    var src_tags = dom.getElementsByTagName("script");
+                    for(var i = src_tags.length - 1; i >= 0; i--) __dom.remove_node(src_tags[i]);
+                },
+                'beforeSaveHtml':function(html){
+                    // 웹 에디터 본문 HTML 저장 전 수행됨
+                },
+                'imageLimitSize':(10 * 1024 * 1024), // 이미지 업로드 사이즈 제한 10MB
+                'largeToolbar': true,
+                'core':{},
+            });
+            this.keditor['do'](function(adapter) {
+                // 로딩 완료 후 에디터 본문에 HTML 삽입
+                adapter.setHtml('<p>Editor Test</p>');
+                adapter.setHeight(300);
+            });
+    },
+    methods: {
+        setHtml(){
+            this.keditor.do(function(adapter) {
+                var old_contents = adapter.getHtml();
+                adapter.setHtml(
+                    KEditor.getInlineStyleHtml(old_contents)
+                    + "<p>Editor Test 111 </p>"
+                );
+                adapter.getHtml();
+            });
+        },
+        getHtml(){
+            this.keditor_html = this.keditor.getHtml();
+        },
+        changeHeight(){
+            if(this.keditor_height > 500)
+                this.keditor_height = 200;
+            else
+                this.keditor_height += 100;
+            this.keditor.setHeight(this.keditor_height);
+        },
+    },
+
+}).mount('#vue3-top-object');
+
+</script>
+
+{% endblock %}

@@ -1,0 +1,116 @@
+.note-editor .note-editable {
+    line-height: 100%;  //개행 간격을 알맞게 설정
+}
+note-contents > p {line-height: 100%; margin:0.3em;}
+note-contents > span {line-height: 0%; margin:0em;}
+
+// vue data hidden before loading
+[v-cloak] { display: none; }
+
+/* === progress-bar animation === */
+.progress-bar.indeterminate3 {
+  position: relative;
+  animation: progress-indeterminate 0.3s linear infinite;
+}
+.progress-bar.indeterminate10 {
+  position: relative;
+  animation: progress-indeterminate 1s linear infinite;
+}
+
+a.nav-link:not(.active):hover{  background: #AAAA55 !important; }
+
+@keyframes progress-indeterminate {
+   from { left: -50%; width: 50%; }
+   to { left: 100%; width: 50%;}
+}
+/* === progress-bar animation === */
+
+/* .tooltip-inner{ background-color:#EEFF88;!important; color: #000 ; } */
+.rnd-tooltip .rnd-tooltip-content {
+    visibility: hidden;
+    background-color: orange;
+    color: white;
+    text-align: center;
+    position: absolute;
+    padding : 5px;
+    z-index : 9991;
+}
+.rnd-tooltip:hover .rnd-tooltip-content { visibility: visible; }
+
+/* vue modal setting */
+.vue_modal,.vue_overlay{width:100%;height:100%;position:fixed;left:0;top:0;}
+.vue_overlay{opacity:0.5;background-color:black;}
+
+/* edit setting */
+.note-editable { background-color: white; }
+
+/* callout component */
+.callout {
+  padding: 20px;
+  margin: 0px;
+  border: 1px solid #ccc;
+  border-left-width: 5px;
+  border-radius: 3px;
+}
+.callout h4 {
+  margin-top: 0;
+  margin-bottom: 5px;
+}
+.callout p:last-child {
+  margin-bottom: 0;
+}
+.callout code {
+  border-radius: 3px;
+}
+.callout + .bs-callout {
+  margin-top: -5px;
+}
+
+.callout-default {
+  border-left-color: #777;
+}
+.callout-default h4 {
+  color: #777;
+}
+
+.callout-primary {
+  border-left-color: #428bca;
+}
+.callout-primary h4 {
+  color: #428bca;
+}
+
+.callout-success {
+  border-left-color: #5cb85c;
+}
+.callout-success h4 {
+  color: #5cb85c;
+}
+
+.callout-danger {
+  border-left-color: #d9534f;
+}
+.callout-danger h4 {
+  color: #d9534f;
+}
+
+.callout-warning {
+  border-left-color: #f0ad4e;
+}
+.callout-warning h4 {
+  color: #f0ad4e;
+}
+
+.callout-info {
+  border-left-color: #5bc0de;
+}
+.callout-info h4 {
+  color: #5bc0de;
+}
+
+.callout-bdc {
+  border-left-color: #29527a;
+}
+.callout-bdc h4 {
+  color: #29527a;
+}

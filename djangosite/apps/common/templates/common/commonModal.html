@@ -1,0 +1,131 @@
+
+<teleport to="body">
+    <!-- Modal -->
+    <style> .vue_overlay{opacity:0.3;background-color:black;} </style>
+
+    <div class="modal fade" id="confirmModalDiv" tabindex="-1"
+         data-bs-backdrop="static" data-bs-keyboard="false" style="z-index: 9998;">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content text-center">
+                <div class="modal-header bg-danger" style="cursor:move">
+                    <h5 class="modal-title w-100 text-light">[[ modal_title ]]</h5>
+                </div>
+                <div class="modal-body">
+                    <div class="row align-items-center" style="min-height:100px;">
+                        <div class="w-100">
+                            [[ modal_contents ]]
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="w-100">
+                        <button type="button" class="btn btn-danger m-2" style="min-width:100px;" @click="modal_ok">Confirm</button>
+                        <button type="button" class="btn btn-secondary m-2" style="min-width:100px;" @click="modal_cancel">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</teleport>
+
+<!-- Progress bar Modal -->
+<style> .modal-backdrop { opacity:0.1 !important; }</style>
+<div class="modal" id="loadingModalDiv" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered mx-auto" style="width:200px;">
+        <div class="modal-content text-center">
+            <div class="progress w-100">
+                <div class="progress-bar bg-success indeterminate3"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Warning Modal -->
+<div class="modal fade" id="warningModalDiv" tabindex="-1"
+     data-bs-backdrop="static" data-bs-keyboard="false" style="z-index: 9999;">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-center">
+            <div :class="[warning_type == 'Warning'? 'bg-warning':'bg-danger']"
+                 class="modal-header" style="cursor:move">
+                <h5 class="modal-title w-100 text-light">[[warning_title]]</h5>
+            </div>
+            <div class="modal-body">
+                <div class="row align-items-center" style="min-height:100px;">
+                    <div class="w-100">
+                        <span v-html="error_message"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="w-100">
+                    <button type="button" class="btn btn-secondary m-2" style="min-width:100px;" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+var loadingModalEl = new bootstrap.Modal(document.getElementById('loadingModalDiv'), null);
+Vue.createApp({}).mount('#loadingModalDiv'); // Vue instance 생성 : 없을 경우 충돌 발생
+
+var warningModalEl = new bootstrap.Modal(document.getElementById('warningModalDiv'), null);
+var warningModal = Vue.createApp({
+    delimiters: ['[[', ']]'],
+    data(){
+        return {
+            warning_type : 'Warning',
+            warning_title : 'Warning',
+            error_message : null,
+        }
+    },
+    methods : {
+        show_modal(err){
+            this.error_message = err;
+            if(err.response != 'undefined' && err.response != null) {
+                if(err.response.data.detail)
+                    this.error_message = err.response.data.detail;
+            }
+            warningModalEl.show();
+        },
+        set_type(type){
+            this.warning_type = type;
+        },
+        set_title(title){
+            this.warning_title = title;
+        }
+    },
+}).mount('#warningModalDiv');
+
+var confirmModalEl = new bootstrap.Modal(document.getElementById('confirmModalDiv'), null);
+var confirmModal = Vue.createApp({
+    delimiters: ['[[', ']]'],
+    data(){
+        return {
+            callback_obj : null,
+            modal_title : "{{ modal_title }}",
+            modal_contents : "{{ modal_contents }}",
+        }
+    },
+    methods : {
+        show_modal(obj){
+            this.callback_obj = obj;
+            confirmModalEl.show();
+        },
+        set_title(text){
+            this.modal_title = text;
+        },
+        set_contents(text){
+            this.modal_contents = text;
+        },
+        modal_ok(){
+            this.callback_obj.modal_ok();
+            confirmModalEl.hide();
+        },
+        modal_cancel(){
+            // this.callback_obj.modal_cancel();
+            confirmModalEl.hide();
+        },
+    },
+}).mount('#confirmModalDiv');
+</script>

@@ -1,0 +1,207 @@
+{% extends "base/base.html" %}
+{% load static %}
+{% load commonModal %}
+
+{% block content %}
+{% common_dialog %}
+<div class="container px-0" id="vue3-top-object">
+    <div class="callout callout-primary mb-3">
+        {% if request.preset.user_lang == 'kr' %}
+            <strong>메뉴 리스트 작성 및 권한 관리</strong>
+            <br>Acl Inherit 상태는 부모 메뉴의 권한을 모두 상속받은 상태입니다.
+            <br>최종 권한은 로그인한 사용자의 모든 권한 중 최상위 권한이 적용됩니다.
+        {% else %}
+            <strong>Create system menu and management access list</strong>
+            <br>State of "Acl Inherit" is inherit all access list of parent menu.
+            <br>Latest access authority is maximum value of login user's access list.
+        {% endif %}
+    </div>
+
+    <div class="hstack">
+
+        <div class="vstack col-4 align-top me-2" style="min-height:100px;">
+            <menu-list-component ref="menuListComponent"
+                                 :site="'{{request.preset.site}}'"
+                                 :lang="'{{request.preset.user_lang}}'"
+                                 :menus="{{request.menuList}}"
+                                 :mode="'admin'"
+                                 @select-menu="menuSelected"></menu-list-component>
+        </div>
+
+        <div class="vstack col-8 align-top border rounded">
+            <div style="min-height:200px;">
+                <div class="m-1 p-2 bg-primary bg-opacity-25">
+                    <i class="bi bi-justify p-1"></i><b>Menu Information</b>
+                </div>
+
+                <div class="mx-0 p-1 mb-2">
+                    <div v-if="selectedMenu.id && menuMode == 'info' " class="vstack">
+                        <div class="hstack">
+                            <div class="col me-1">
+                                <div class="input-group">
+                                    <span class="input-group-text" style="width:100px;"><b>ID</b></span>
+                                    <input class="form-control bg-white" type="text" :value="selectedMenu.id" disabled>
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <div class="input-group">
+                                    <div class="input-group-text">
+                                        <input class="form-check-input" type="checkbox" id="acl_inherit" :checked="selectedMenu.acl_inherit" disabled>
+                                    </div>
+                                    <div class="input-group-text bg-white" style="width:150px;">
+                                        <label class="form-check-label" for="acl_inherit">
+                                            <span v-if="selectedMenu.level > 0">Acl Inherit</span>
+                                            <span v-else>Normal Service</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="input-group mt-1">
+                            <span class="input-group-text" style="width:100px;"><b>Name</b></span>
+                            <input class="form-control bg-white" type="text" name="Name" :value="selectedMenu.name" disabled>
+                        </div>
+                        <div class="input-group mt-1">
+                            <span class="input-group-text" style="width:100px;"><b>Path</b></span>
+                            <input class="form-control bg-white" type="text" name="Path" :value="selectedMenu.path" disabled>
+                        </div>
+
+                        <div v-if="selectedMenu.path != '/' " class="hstack my-2">
+                            <div class="btn btn-darkblue col me-1" style="padding:0.1em 0.5em;" @click="addMenu">Add</div>
+                            <div class="btn btn-darkblue col me-1" style="padding:0.1em 0.5em;" @click="modifyMenu">Modify</div>
+                            <div class="btn btn-darkblue col me-3" style="padding:0.1em 0.5em;" @click="removeMenu">Remove</div>
+                            <div class="btn btn-darkgreen col me-1" style="padding:0.1em 0.5em;" @click="moveOrder('first')">First</div>
+                            <div class="btn btn-darkgreen col me-1" style="padding:0.1em 0.5em;" @click="moveOrder('up')">Up</div>
+                            <div class="btn btn-darkgreen col me-1" style="padding:0.1em 0.5em;" @click="moveOrder('down')">Down</div>
+                            <div class="btn btn-darkgreen col me-1" style="padding:0.1em 0.5em;" @click="moveOrder('last')">Last</div>
+                            <div class="btn btn-darkgray col ms-3" style="padding:0.1em 0.5em;" @click="moveMenu">Move</div>
+                        </div>
+                        <div v-else class="hstack my-2">
+                            <div class="btn btn-darkblue me-1" style="width:90px; padding:0.1em 0.5em;" @click="addMenu">Add</div>
+                        </div>
+                    </div>
+                    <div v-else-if="menuMode != 'info'" class="vstack">
+                        <div class="hstack">
+                            <div v-if="menuMode == 'move'" class="col-auto me-1">
+                                <div class="input-group">
+                                    <span class="input-group-text" style="background-color:#FFFFDD; width:100px;"><b>Parent</b></span>
+                                    <input class="form-control" type="text" style="background-color:#FFFFEE;"
+                                           name="Parent" v-model="newMenu.parentName" disabled>
+                                </div>
+                            </div>
+                            <div class="col me-1">
+                                <div class="input-group">
+                                    <span class="input-group-text" style="width:100px;"><b>ID</b></span>
+                                    <input class="form-control bg-white" type="text" :value="selectedMenu.id" disabled>
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <div class="input-group">
+                                    <div class="input-group-text">
+                                        <input class="form-check-input" type="checkbox" id="new_acl_inherit"
+                                               v-model="newMenu.acl_inherit" :disabled="menuMode == 'move'">
+                                    </div>
+                                    <div class="input-group-text bg-white" style="width:150px;">
+                                        <label class="form-check-label" for="acl_inherit">
+                                            <span v-if="selectedMenu.level > 0">Acl Inherit</span>
+                                            <span v-else>Normal Service</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="input-group mt-1">
+                            <span class="input-group-text" style="width:100px;"><b>Name</b></span>
+                            <input class="form-control bg-white" type="text" name="Name"
+                                   v-model="newMenu.name" :disabled="menuMode == 'move'">
+                        </div>
+                        <div class="input-group mt-1">
+                            <span class="input-group-text" style="width:100px;"><b>Path</b></span>
+                            <input class="form-control bg-white" type="text" name="Path"
+                                   v-model="newMenu.path" :disabled="menuMode == 'move'">
+                        </div>
+
+                        <div class="hstack my-2">
+                            <div class="btn btn-darkblue col me-3" style="padding:0.1em 0.5em;" @click="save">Save</div>
+                            <div class="btn btn-darkgreen col me-1" style="padding:0.1em 0.5em;" @click="cancel">Cancel</div>
+                        </div>
+                    </div>
+                    <div v-else class="border">
+                        <div class="row align-items-center" style="min-height:50px;">
+                            <div class="w-100 text-center">Please, select menu item!</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hstack">
+
+                <div class="vstack col-6">
+                    <div class="m-1 p-2 bg-primary bg-opacity-25">
+                        <i class="bi bi-justify p-1"></i><b>Acl List</b>
+                    </div>
+
+                    <div class="mx-0 p-1 mb-2" style="min-height:100px;">
+                        <div class="hstack justify-content-end mb-1">
+                            <div class="col me-1">
+                                <user-select-component ref="userSelectComponent"
+                                               :site="'{{request.preset.site}}'"
+                                               :lang="'{{request.preset.user_lang}}'"
+                                               :pmode="'new'"
+                                                @select-target="targetSelected"></user-select-component>
+                            </div>
+                            <div class="col-auto me-1">
+                                <select class="form-select" v-model="aclLevel">
+                                    <option value="1" selected> 1: View</option>
+                                    <option value="3"> 3: Read</option>
+                                    <option value="5"> 5: Write</option>
+                                    <option value="6"> 6: Write (+)</option>
+                                    <option value="7"> 7: Management</option>
+                                    <option value="8"> 8: Management (+)</option>
+                                    <option value="9"> 9: Admin</option>
+                                </select>
+                            </div>
+                            <div class="btn btn-primary col-auto mx-1" style="width:90px;" @click="addAcl">Add</div>
+                            <div class="btn btn-primary col-auto" style="width:90px;" @click="removeAcl">Remove</div>
+                        </div>
+
+                        <div v-if="aclList.length > 0">
+                            <div v-for="acl in aclList" class="border">
+                                <div class="hstack align-middle pt-1 pb-2 px-2 bg-opacity-50 overflow-hidden"
+                                    :class="[acl.parent_id == selectedMenu.id ? 'text-primary':'text-secondary', selectedAcl == acl ? 'bg-success':'' ]"
+                                    :style="{cursor:activeAclCursor(acl)}"
+                                    @click="selectAcl(acl)" >
+                                    <div class="col-auto" style="width:100px;"> [[ acl.acl_value ]] : [[ acl.acl_value_name ]]</div>
+                                    <div class="col mx-2 ">
+                                        {% if request.preset.user_lang == "kr" %}
+                                            [[ acl.acl_target_name ]]
+                                        {% else %}
+                                            [[ acl.acl_target_name_en ]]
+                                        {% endif %}
+                                        ([[ acl.acl_target ]])
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-else-if="selectedMenu" class="border">
+                            <div class="row align-items-center" style="min-height:50px;">
+                                <div class="w-100 text-center">There is no Acl list</div>
+                            </div>
+                        </div>
+                        <div v-else class="border">
+                            <div class="row align-items-center" style="min-height:50px;">
+                                <div class="w-100 text-center">Please, select menu item!</div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'vue-v0.18/js/menuControl.vue.js' %}" site="{{request.preset.site}}"></script>
+
+
+{% endblock %}

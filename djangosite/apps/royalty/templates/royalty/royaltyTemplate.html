@@ -1,0 +1,373 @@
+{% extends "base/base.html" %}
+{% load static %}
+{% load commonModal %}
+
+{% block content %}
+{% common_dialog %}
+
+<script src="{% static 'js/chart.min.js' %}"></script>
+<div class="container px-0" id="vue3-top-object" v-cloak>
+    <div class="hstack">
+        <div class="col callout callout-primary">
+            <div>
+                {% if request.preset.user_lang == 'kr' %}
+                    <strong>로열티 </strong>
+                    <br>Description : 로열티 기준 정보 입력후 로열티를 추출한다.
+                {% else %}
+                    <strong>Royalty</strong>
+                    <br>Description : Input royalty excel and download result excel.
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="hstack border-bottom border-primary mt-2">
+        <div class="col-auto border border-bottom-0 border-primary rounded-top py-1 px-2 bg-opacity-25" style="cursor:pointer"
+             :class="[switchData == 'input' ? 'bg-primary ':'bg-white text-black-50']" @click="switchData = 'input'">
+            <i class="bi bi-grid-3x3-gap-fill px-2" :class="[switchData == 'input' ? 'text-danger':'text-black-50']"></i>
+            <b>Royalty Input</b>
+        </div>
+        <!--<div class="col-auto border border-bottom-0 border-primary rounded-top py-1 px-2 ms-1 bg-opacity-25" style="cursor:pointer"
+             :class="[switchData == 'report' ? 'bg-success':'bg-white text-black-50']"  @click="switchData = 'report'">
+            <i class="bi bi-grid-3x3-gap-fill px-2" :class="[switchData == 'report' ? 'text-danger':'text-black-50']"></i>
+            <b>Report</b>
+        </div>-->
+        <div class="col-auto border border-bottom-0 border-primary rounded-top py-1 px-2 ms-1 bg-opacity-25" style="cursor:pointer"
+             :class="[switchData == 'admin' ? 'bg-warning':'bg-white text-black-50']"  @click="adminInit">
+            <i class="bi bi-grid-3x3-gap-fill px-2" :class="[switchData == 'admin' ? 'text-danger':'text-black-50']"></i>
+            <b>Admin</b>
+        </div>
+    </div>
+    <div v-if="switchData == 'input' " class="vstack mb-2">
+        <div class="row my-1 align-items-center">
+            <div class="hstack">
+                <div class="input-group shadow-sm pe-1" >
+                    <label class="input-group-text" style="width:150px;">
+                        {% if request.preset.user_lang == 'kr' %}
+                            구분
+                        {% else %}
+                            Period
+                        {% endif %}
+                    </label>
+                    <select class="form-select"  v-model="period_name" >
+                        <option v-for="period in period_list"  :value="period">[[period]]</option>
+                    </select>
+                </div>
+                <div class="col-auto ms-auto">
+                    <button class="btn btn-primary" style="width:100px;" @click="page(tdata.active_page, tdata.page_num, $event)">Search</button>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-12" >
+                <div class="input-group">
+                    <div class="col my-1">
+                        <button class="btn btn-primary me-2" style="min-width:80px;padding:0.1em 0.5em;" @click="excelUploadMode">
+                            {% if request.preset.user_lang == 'kr' %}
+                            기준 Excel Upload
+                            {% else %}
+                            Standard Excel Upload
+                            {% endif %}
+                        </button>
+                        <button class="btn btn-primary me-2" style="min-width:80px;padding:0.1em 0.5em;" @click="downloadResultExcel" >
+                            {% if request.preset.user_lang == 'kr' %}
+                            결과 Excel Download
+                            {% else %}
+                            Result Excel Download
+                            {% endif %}
+                        </button>
+                        <button class="btn btn-primary me-2" style="min-width:80px;padding:0.1em 0.5em;" @click="column_mode='excel_result_upload'" >
+                            {% if request.preset.user_lang == 'kr' %}
+                            결과 Excel Upload
+                            {% else %}
+                            Result Excel Upload
+                            {% endif %}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-12" >
+                파일을 나열할 것
+                구분, 올린 시간, 엑셀 아이콘 등을 표기 할 것
+                <table class="table table-bordered m-0">
+                    <thead style="background-color:#DDEEFF;">
+                        <tr>
+                            <th class="py-1 text-center">Period Name</th>
+                            <th class="py-1 text-center">모델명</th>
+                            <th class="py-1 text-center">Product_lv</th>
+                            <th class="py-1 text-center">Region</th>
+                            <th class="py-1 text-center">Royalty Y</th>
+                        </tr>
+                    </thead>
+                    <tbody class="shadow-sm">
+                        <tr v-for="data in tdata.data_list" class="bg-opacity-25" :class="{'bg-warning': selectedColumn == data}" @click="selectedColumn = data" >
+                            <td class="py-1 text-center">[[data.period_name]]</td>
+                            <td class="py-1 px-1 text-start">[[data.model_suffix]]</td>
+                            <td class="py-1 px-1 text-start">[[data.product_lv3]]/[[data.product_lv4]]</td>
+                            <td class="py-1 text-center">[[data.region]]</td>
+                            <td class="py-1 text-center">[[data.royalty_option]]</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="panel-footer">
+            <div class="row">
+                <div class="col-md-3 col-12" role="group">
+                    <div class="dropdown">
+                        <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                                data-bs-auto-close="true" aria-expanded="false"> [[ page_num ]] </button>
+                        <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="dropdownNumberButton" style="min-width:50px;" >
+                            <li><a class="dropdown-item" :class="{active: page_num == 10}" href="#" @click="page(active_page, 10, $event)">10</a></li>
+                            <li><a class="dropdown-item" :class="{active: page_num == 20}" href="#" @click="page(active_page, 20, $event)">20</a></li>
+                            <li><a class="dropdown-item" :class="{active: page_num == 50}" href="#" @click="page(active_page, 50, $event)">50</a></li>
+                            <li><a class="dropdown-item" :class="{active: page_num == 100}" href="#" @click="page(active_page, 100, $event)">100</a></li>
+                        </ul>
+                        Total [[ tdata.total_article ]] model
+                    </div>
+                </div>
+                <div class="col-md-6 col-12">
+                    <ul class="pagination justify-content-center">
+
+                        <li class="page-item" :class="{disabled : tdata.previous_page == 0}" >
+                            <a class="page-link text-center mx-1 px-3" aria-label="Previous"
+                               :style="{color:previous_text_color}"
+                               href="#" @click="page(tdata.previous_page, page_num, $event)"> &Lang;&Lang; </a>
+                        </li>
+
+                        <li v-for="p in tdata.page_list" :class="['page-item', { active: active_page === p }]">
+                            <a class="page-link" href="#" @click="page(p, page_num, $event)">[[ p ]]</a>
+                        </li>
+
+                        <li class="page-item" :class="{disabled : tdata.next_page == 0}">
+                            <a class="page-link text-center mx-1 px-3" aria-label="Next"
+                               :style="{color:next_text_color}"
+                                href="#"  @click="page(tdata.next_page, page_num, $event)"> &Rang;&Rang; </a>
+                            </a>
+                        </li>
+
+                    </ul>
+                </div>
+                <div class="col-md-3 col-12 text-end">
+                    &nbsp;
+                </div>
+            </div>
+        </div>
+    </div>
+    <div v-show="switchData == 'report' " class="vstack mb-2">
+        <div class="card">
+            <div class="card-header row mx-0 p-0 justify-content-between">
+                <div class="hstack p-0 justify-content-end">
+                    <div class="col m-2">
+                        <h5 class="m-0">Usage</h5>
+                    </div>
+                    <div class="input-group date me-1" style="width:120px;">
+                        <input type="text" class="form-control bg-white" aria-describedby="date-range-1"
+                               value="{{request.lmday|date:'Y-m-d'}}" ref="sdate" readonly style="padding:0.1em 0.5em;">
+                        <span class="input-group-addon input-group-text" id="date-range-1" style="padding:0.1em 0.5em;">
+                            <i class="bi bi-calendar-date"></i>
+                        </span>
+                    </div>
+                    <div class="input-group date" style="width:120px;">
+                        <input type="text" class="form-control bg-white" aria-describedby="date-range-2"
+                               value="{{request.nextday|date:'Y-m-d'}}" ref="edate" readonly style="padding:0.1em 0.5em;">
+                        <span class="input-group-addon input-group-text" id="date-range-2" style="padding:0.1em 0.5em;">
+                            <i class="bi bi-calendar-date"></i>
+                        </span>
+                    </div>
+                    <button class="btn btn-primary mx-2" style="padding:0.1em 0.5em; width:80px;" @click="reloadChart">Search</button>
+                </div>
+            </div>
+            <div class="card-body p-1">
+                <canvas id="lineChart" height="130" style="max-width: 100%" ></canvas>
+            </div>
+        </div>
+
+        <div class="w-100" style="height:5px;"></div>
+
+        <div class="card border-0" style="max-width:1000px; overflow-x:auto">
+            <div class="card-body p-0">
+                <table width="100%">
+                    <tr class="border">
+                        <th class="text-center" width="80px">Date</th>
+                        <th class="text-center" width="30px" v-for="data in chart_data.labels">
+                            [[ data ]]
+                        </th>
+                    </tr>
+                    <tr class="border" v-for="data in chart_data.datasets">
+                        <td class="text-center" style="cursor:pointer;" @click="item_detail(d.id)">[[ data.label ]]</td>
+                        <td class="text-center" v-for="value in data.data"> [[ value ]] </td>
+                    </tr>
+                </table>
+
+            </div>
+        </div>
+    </div>
+    <div v-show="switchData == 'admin' " class="hstack mb-2">
+        <div class="vstack col-4 align-top border rounded" >
+            <div>
+                <div class="m-1 p-2 bg-primary bg-opacity-25">
+                    <i class="bi bi-justify p-1"></i><b>Column List</b>
+                </div>
+                <div class="vstack align-top border rounded p-2 text-nowrap" style="overflow-x:auto">
+                    <div class="m-0 p-0">
+                        <div v-for="item,index in itemList">
+                            <div :id="item.id" class="hstack align-middle p-1 bg-opacity-50"
+                                 :class="{'bg-success': selectedItem.id == item.id}"
+                                 style="cursor:pointer" @click="selectItem(item)">
+                                <div class="hstack">
+                                    <span class="text-danger">[ [[item.id ]] ]</span>
+                                    [[ item.column_name ]]
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        <div class="vstack col-8 align-top border rounded" >
+            <div>
+                <div class="m-1 p-2 bg-primary bg-opacity-25">
+                    <i class="bi bi-justify p-1"></i><b>Item Control</b>
+                </div>
+                <div class="mx-0 p-1 mb-2">
+                    <div class="vstack">
+                        <div class="hstack">
+                            <div class="col">
+                                <div class="input-group">
+                                    <span class="input-group-text" style="width:120px;"><b>ID</b></span>
+                                    <input class="form-control bg-white" type="text" :value="selectedItem.id" disabled>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="input-group">
+                                    <span class="input-group-text" style="width:120px;"><b>Order NO</b></span>
+                                    <input class="form-control bg-white" type="text" :value="selectedItem.order_no" disabled>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="hstack">
+                            <div class="col">
+                                <div class="input-group">
+                                    <span class="input-group-text" style="width:120px;"><b>Column Nmae</b></span>
+                                    <input class="form-control bg-white" type="text" :value="selectedItem.column_name" disabled>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="hstack">
+                            <div class="col">
+                                <div class="input-group">
+                                    <span class="input-group-text" style="width:120px;"><b>Column Data</b></span>
+                                    <input class="form-control bg-white" type="text" :value="selectedItem.column_data" disabled>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="hstack my-2">
+                            <div class="btn btn-darkblue col me-1" style="padding:0.1em 0.5em;" @click="addColumn">Add</div>
+                            <div class="btn btn-darkblue col me-1" style="padding:0.1em 0.5em;" @click="modifyOrg">Modify</div>
+                            <div class="btn btn-darkblue col me-3" style="padding:0.1em 0.5em;" @click="removeOrg">Remove</div>
+                            <div class="btn btn-darkgreen col me-1" style="padding:0.1em 0.5em;" @click="moveOrgOrder('first')">First</div>
+                            <div class="btn btn-darkgreen col me-1" style="padding:0.1em 0.5em;" @click="moveOrgOrder('up')">Up</div>
+                            <div class="btn btn-darkgreen col me-1" style="padding:0.1em 0.5em;" @click="moveOrgOrder('down')">Down</div>
+                            <div class="btn btn-darkgreen col me-1" style="padding:0.1em 0.5em;" @click="moveOrgOrder('last')">Last</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add Modify Delete Order NO Change 등 만들 것 -->
+            </div>
+        </div>
+    </div>
+    <div v-if="column_mode=='item_add'" class="vue_modal" style="z-index:9991;">
+        <div class="vue_overlay"></div>
+        <div class="modal-dialog modal-dialog-centered mx-auto modal-dialog-scrollable ">
+            <div class="modal-content text-center">
+                <div class="modal-header py-2 bg-success text-white">
+                    <h4 class="col"> Column Item </h4>
+                    <button type="button" class="btn btn-close btn-close-white" @click="column_mode='view'"></button>
+                </div>
+                <div class="modal-body" style="min-height:100px;">
+                    <div class="row" >
+                        <div class="col pt-1 px-2 mb-3">
+                            <div class="hstack border-bottom border-primary">
+                                <div class="col-auto border border-bottom-0 border-primary rounded-top py-1 px-2 bg-primary bg-opacity-25">
+                                    <i class="bi bi-grid-3x3-gap-fill px-2"></i>
+                                    <b>Column Information</b>
+                                </div>
+                            </div>
+                            <div class="input-group mt-1">
+                                <label class="input-group-text" style="width:150px;font-size:9pt"><b>Column Name</b></label>
+                                <input type="text" class="form-control col" style="padding:0.1em 0.5em;" v-model="select_item.column_name"  >
+                            </div>
+                            <div class="input-group mt-1">
+                                <label class="input-group-text" style="width:150px;font-size:9pt"><b>Column Data</b></label>
+                                <input type="text" class="form-control col" style="padding:0.1em 0.5em;" v-model="select_item.column_data"  >
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="col text-center">
+                        <div v-if="column_mode == 'item_add'" class="btn btn-primary me-4" style="width:100px;"
+                             @click="addItem">Add</div>
+                        <div class="btn btn-secondary" style="width:100px;"
+                             @click="column_mode='view'">Close</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div v-if="column_mode=='excel_upload' || column_mode=='excel_result_upload'" class="vue_modal" style="z-index: 9990;">
+        <div class="vue_overlay"></div>
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable ">
+            <div class="modal-content text-center">
+                <div class="modal-header py-2 bg-success text-white" style="cursor:move">
+                    <h4 class="col"> Excel Upload </h4>
+                    <button type="button" class="btn-close btn-close btn-close-white" @click="column_mode='view'"></button>
+                </div>
+                <div class="modal-body text-start" style="min-height:100px;">
+                    <div class="col my-1">
+                        <button class="btn btn-primary me-2" style="min-width:80px;padding:0.1em 0.5em;" @click="getExcelForm">Format</button>
+                    </div>
+                    <div class="input-group">
+                        <label class="input-group-text" style="width:100px;"><b>Manual File</b></label>
+                        <div class="col border py-1" >
+                            <attached-file-component ref="attachedFileComponent"
+                                         :attached_list="select_item.attached_files"
+                                         :type="'single'"
+                                         :mode="page_mode"></attached-file-component>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="col text-center">
+                        <div v-if="column_mode == 'excel_upload'" class="btn btn-primary me-4" style="width:100px;"
+                             @click="uploadExcel">Submit</div>
+                        <div v-if="column_mode == 'excel_result_upload'" class="btn btn-primary me-4" style="width:100px;"
+                             @click="uploadResultExcel">Submit</div>
+                        <div v-if="column_mode == 'excel_upload' || column_mode=='excel_result_upload'" class="btn btn-secondary" style="width:100px;"
+                             @click="column_mode='view'">Close</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Progress bar Modal -->
+    <div v-if="showProgressModal" class="vue_modal" style="z-index: 9995;">
+        <div class="vue_overlay"></div>
+        <div class="modal-dialog modal-dialog-centered mx-auto" style="width:200px;">
+            <div class="modal-content text-center">
+                <div class="progress w-100">
+                    <div class="progress-bar bg-success indeterminate3"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="{% static 'vue-v0.18/js/royalty.vue.js' %}"
+        username="{{request.preset.user_name}}"
+        site="{{request.preset.site}}"
+        lang="{{request.preset.user_lang}}"></script>
+{% endblock %}

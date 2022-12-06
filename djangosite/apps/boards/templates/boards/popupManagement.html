@@ -1,0 +1,240 @@
+{% extends "base/base.html" %}
+{% load static %}
+{% load commonModal %}
+
+{% block content %}
+{% common_dialog %}
+
+<script src="{% static 'js/bootstrap-datepicker.ko.js' %}" charset="UTF-8"></script>
+
+<div class="container px-0" id="vue3-top-object" v-cloak>
+    <div class="callout callout-primary mb-3">
+        {% if request.preset.user_lang == 'kr' %}
+            <strong>게시판 Pop-up 관리</strong>
+            <br> Target menu 에 Pup-up 으로 게시할 게시판 내용을 pop-up 기간과 함께 등록, 관리 합니다.
+        {% else %}
+            <strong>Pop-up board management</strong>
+            <br> Pup-up article is depends on target menu and pop up period.
+        {% endif %}
+    </div>
+
+    <div>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr><td colspan="10" style="background-color:#99AAAA; margin:0px;padding:0px; height:2px"></td></tr>
+                    <tr class="table-primary">
+                        <th scope="col" class="text-center" style="width:50px;">No</th>
+                        <th scope="col" class="col text-start">Title</th>
+                        <th scope="col" class="text-center">Target ID</th>
+                        <th scope="col" class="text-center">Target Menu</th>
+                        <th scope="col" class="text-center">Target Division</th>
+                        <th scope="col" class="text-center" style="width:150px;">Start Date</th>
+                        <th scope="col" class="text-center" style="width:150px;">End Date</th>
+                    </tr>
+                </thead>
+                <tbody class="shadow-sm">
+                    <tr v-for="d in data_list" :class="{'text-danger': isInvalid(d)}" style="cursor:pointer;" @click="item_detail(d.id)">
+                        <td class="text-center">[[ d.id ]]</td>
+                        <td class="text-start">[[ d.title ]]</td>
+                        <td class="text-center">[[ d.target_id ]]</td>
+                        <td class="text-center">[[ d.menu_name ]]</td>
+                        <td class="text-center">[[ d.div_name ]]</td>
+                        <td class="text-center">[[ d.popup_sdate ]]</td>
+                        <td class="text-center">[[ d.popup_edate ]]</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="panel-footer">
+            <div class="row">
+                <div class="col-md-3 col-12" role="group">
+                    <div class="dropdown">
+                        <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownNumberButton"
+                            data-bs-toggle="dropdown" data-bs-auto-close="true" aria-expanded="false"> [[ page_num ]] </button>
+                        <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="dropdownNumberButton" style="min-width:50px;" >
+                            <li><a class="dropdown-item" :class="{active: page_num == 10}" href="#" @click="page(active_page, 10, $event)">10</a></li>
+                            <li><a class="dropdown-item" :class="{active: page_num == 20}" href="#" @click="page(active_page, 20, $event)">20</a></li>
+                            <li><a class="dropdown-item" :class="{active: page_num == 50}" href="#" @click="page(active_page, 50, $event)">50</a></li>
+                            <li><a class="dropdown-item" :class="{active: page_num == 100}" href="#" @click="page(active_page, 100, $event)">100</a></li>
+                        </ul>
+                        Total [[ total_article ]] articles
+                    </div>
+                </div>
+                <div class="col-md-6 col-12">
+                    <ul class="pagination justify-content-center">
+
+                        <li class="page-item" :class="{disabled : previous_page == 0}" >
+                            <a class="page-link text-center mx-1 px-3" aria-label="Previous"
+                               :style="{color:previous_text_color}"
+                               href="#" @click="page(previous_page, page_num, $event)"> &Lang;&Lang; </a>
+                        </li>
+
+                        <li v-for="p in page_list" :class="['page-item', { active: active_page === p }]">
+                            <a class="page-link" href="#" @click="page(p, page_num, $event)">[[ p ]]</a>
+                        </li>
+
+                        <li class="page-item" :class="{disabled : next_page == 0}">
+                            <a class="page-link text-center mx-1 px-3" aria-label="Next"
+                               :style="{color:next_text_color}"
+                                href="#"  @click="page(next_page, page_num, $event)"> &Rang;&Rang; </a>
+                            </a>
+                        </li>
+
+                    </ul>
+                </div>
+                <div class="col-md-3 col-12 text-end">
+                    {% if request.preset.menu_acl > 7 %}
+                    <button type="button" class="btn btn-primary shadow-sm" style="width:100px;" @click="new_page">New</button>
+                    {% else %}
+                    <button type="button" class="btn btn-secondary" style="width:100px;" disabled>New</button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div v-show="page_mode != 'list'" class="vue_modal" style="z-index: 9990;">
+        <div class="vue_overlay"></div>
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+
+            <div class="modal-content text-center">
+                <div class="modal-header py-2 bg-success text-white" style="cursor:move">
+                    <h4 class="col"> Pop-up Management </h4>
+                    <button type="button" class="btn-close btn-close btn-close-white" @click="page_mode ='list' "></button>
+                </div>
+                <div class="modal-body border" style="min-height:100px;">
+                    <!-- board form -->
+                    <form role="form">
+                        {% csrf_token %}
+                        <div class="col hstack mt-1">
+                            <div class="col input-group">
+                                <label class="input-group-text" style="width:100px;"><b>Division</b></label>
+                                <input class="form-control" type="text"
+                                       :disabled="page_mode == 'detail' || '{{request.preset.user_type}}' == ''"
+                                       v-model="active_item.div_name" name="Division" required>
+                            </div>
+                        </div>
+                        <div class="col hstack mt-1">
+                            <div class="col input-group">
+                                <label class="input-group-text" style="width:100px;"><b>Board ID</b></label>
+                                <input class="form-control" :disabled="page_mode == 'detail'" type="text" v-model="active_item.parent_id"
+                                       name="Board Id" required>
+                            </div>
+                            <div v-if="page_mode == 'detail'" class="col-auto mx-0">
+                                <button class="btn btn-primary mx-2" style="min-width:90px;" @click="viewPopup">View Popup</button>
+                            </div>
+                        </div>
+                        <div class="col hstack mt-1">
+                            <div class="col input-group">
+                                <label class="input-group-text" style="width:100px;"><b>Board Title</b></label>
+                                <input class="form-control" disabled type="text" v-model="active_item.title">
+                            </div>
+                        </div>
+                        <div class="col hstack mt-1">
+                            <div class="input-group date">
+                                <label class="input-group-text" :class="{'text-danger': isInvalid(active_item)}" style="width:100px;"><b>Start Date</b></label>
+                                <input type="text" class="form-control" aria-describedby="date-range-1"
+                                       v-model="active_item.popup_sdate" ref="sdate" :disabled="page_mode == 'detail'"
+                                       name="Start Date" required>
+                                <span class="input-group-addon input-group-text" id="date-range-1">
+                                    <i class="bi bi-calendar-date"></i>
+                                </span>
+                            </div>
+
+                            <div class="input-group date">
+                                <label class="input-group-text" :class="{'text-danger': isInvalid(active_item)}" style="width:100px;"><b>End Date</b></label>
+                                <input type="text" class="form-control" aria-describedby="date-range-2"
+                                       v-model="active_item.popup_edate" ref="edate" :disabled="page_mode == 'detail'"
+                                       name="End Date" required>
+                                <span class="input-group-addon input-group-text" id="date-range-2">
+                                    <i class="bi bi-calendar-date"></i>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col hstack mt-1">
+                            <div class="col input-group">
+                                <label class="input-group-text" style="width:100px;"><b>Target ID</b></label>
+                                <input class="form-control" :disabled="page_mode == 'detail'" type="text" v-model="active_item.target_id"
+                                    name="Target ID" required>
+                                <button v-if="page_mode != 'detail'" class="input-group-text" @click="openMenuSelectModal">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col hstack mt-1">
+                            <div class="col input-group">
+                                <label class="input-group-text" style="width:100px;"><b>Target Menu</b></label>
+                                <input class="form-control" disabled type="text" :value="active_item.target_menu">
+                            </div>
+                        </div>
+                    </form>
+                    <!-- board form -->
+                </div>
+                <div class="modal-footer">
+                    <div class="col text-center">
+                        {% if request.preset.menu_acl >= 7 %}
+                            <button v-if="page_mode == 'new'" class="btn btn-primary mx-2" type="button" style="min-width:90px;" @click="form_submit">Submit Form</button>
+                            <button v-if="page_mode == 'modify'" class="btn btn-primary mx-2" type="button" style="min-width:90px;" @click="form_update">Update</button>
+                            <button v-if="page_mode == 'modify'" class="btn btn-secondary mx-2" type="button" style="min-width:90px;" @click="form_cancel">Cancel</button>
+
+                            <button v-if="page_mode == 'detail'" class="btn btn-primary mx-2" type="button" style="min-width:90px;" @click="form_modify">Modify</button>
+                            <button v-if="page_mode == 'detail'" class="btn btn-danger mx-2" type="button" style="min-width:90px;" @click="form_delete">Delete</button>
+                        {% endif %}
+
+                        <button v-if="page_mode == 'detail' || page_mode == 'new'"
+                                class="btn btn-secondary mx-3" type="button" style="min-width:90px;" @click="page_mode ='list'">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div v-if="menuSelectModal" class="vue_modal" style="z-index: 9991;">
+        <div class="vue_overlay"></div>
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content text-center">
+                <div class="modal-header py-2 bg-success text-white" style="cursor:move">
+                    <h4 class="col">Menu Select Dialog</h4>
+                    <button type="button" class="btn-close btn-close btn-close-white" @click="menuSelectModal=false"></button>
+                </div>
+
+                <div class="modal-body" style="min-height:150px; max-height:400px;">
+                    <menu-list-component :site="'{{request.preset.site}}'"
+                                         :lang="'{{request.preset.user_lang}}'"
+                                         :menus="{{request.menuList}}"
+                                         @select-menu="menuSelected"></menu-list-component>
+                </div>
+                <div class="modal-footer">
+                    <div class="w-100">
+                        <button class="btn btn-primary mx-2" type="button" style="min-width:90px;" @click="targetMenuSelect">Select</button>
+                        <button class="btn btn-primary mx-2" type="button" style="min-width:90px;" @click="targetMenuCancel">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <popup-component ref="popupComponent"
+        :site="'{{request.preset.site}}'"
+        :lang="'{{request.preset.user_lang}}'"
+        :manage_mode="true">
+    </popup-component>
+
+</div>
+
+<script src="{% static 'vue-v0.18/js/popupManagement.vue.js' %}"></script>
+
+<script>
+$('.input-group.date').datepicker({
+    //daysOfWeekDisabled: "0,6",
+    daysOfWeekHighlighted: "0",
+    //startDate: "+3d",
+    todayHighlight: true,
+    autoclose: true,
+    language: '{{request.preset.user_lang}}',
+    orientation: "bottom",
+});
+</script>
+
+{% endblock %}

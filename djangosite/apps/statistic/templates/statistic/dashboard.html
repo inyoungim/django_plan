@@ -1,0 +1,149 @@
+{% extends "base/base.html" %}
+{% load static %}
+{% load commonModal %}
+
+{% block content %}
+{% common_dialog %}
+<script src="{% static 'js/bootstrap-datepicker.ko.js' %}" charset="UTF-8"></script>
+<script src="{% static 'js/chart.min.js' %}"></script>
+
+<div class="container p-0" id="vue3-top-object">
+
+    <div class="callout callout-primary mb-3">
+        {% if request.preset.user_lang == 'kr' %}
+            <strong>사용량 통계 정보</strong>
+            <br>선택된 메뉴 와 검색 기간 기준으로 Access History 를 조회합니다.
+            <br>선택된 메뉴의 하위 메뉴도 모두 포함하여 조회 됩니다.
+        {% else %}
+            <strong>Statistic information</strong>
+            <br>View state of access history selected menu.
+            <br>It includes itself and child menus.
+        {% endif %}
+    </div>
+
+    <div class="hstack">
+        <div class="col-auto ms-auto">
+            <button v-if="maxHeight != 10000" type="button" class="btn btn-outline-danger" style="padding:0.1em 0.5em;" @click="expandHeight">
+                <i class="bi bi-arrows-angle-expand"></i>
+            </button>
+            <button v-else type="button" class="btn btn-outline-primary" style="padding:0.1em 0.5em;" @click="contractHeight">
+                <i class="bi bi-arrows-angle-contract"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="hstack mb-2">
+        <div class="vstack col-3 align-top" :style="{'max-height':maxHeight +'px'}">
+            <menu-list-component :site="'{{request.preset.site}}'"
+                                 :lang="'{{request.preset.user_lang}}'"
+                                 :menus="{{request.menuList}}"
+                                 @select-menu="menuSelected"></menu-list-component>
+        </div>
+
+        <!-- Line 차트 -->
+        <div class="vstack col-9 align-top" :style="{'max-height':maxHeight +'px'}">
+            <div class="card">
+                <div class="card-header row mx-0 p-0 justify-content-between">
+                    <div class="hstack p-0 justify-content-end">
+                        <div class="col m-2">
+                            <h5 class="m-0">Usage</h5>
+                        </div>
+                        <div class="input-group date me-1" style="width:120px;">
+                            <input type="text" class="form-control bg-white" aria-describedby="date-range-1"
+                                   value="{{request.lmday|date:'Y-m-d'}}" ref="sdate" readonly style="padding:0.1em 0.5em;">
+                            <span class="input-group-addon input-group-text" id="date-range-1" style="padding:0.1em 0.5em;">
+                                <i class="bi bi-calendar-date"></i>
+                            </span>
+                        </div>
+                        <div class="input-group date" style="width:120px;">
+                            <input type="text" class="form-control bg-white" aria-describedby="date-range-2"
+                                   value="{{request.nextday|date:'Y-m-d'}}" ref="edate" readonly style="padding:0.1em 0.5em;">
+                            <span class="input-group-addon input-group-text" id="date-range-2" style="padding:0.1em 0.5em;">
+                                <i class="bi bi-calendar-date"></i>
+                            </span>
+                        </div>
+                        <button class="btn btn-primary mx-2" style="padding:0.1em 0.5em; width:80px;" @click="reloadChart">Search</button>
+                    </div>
+                </div>
+                <div class="card-body p-1">
+                    <canvas id="lineChart" height="130" style="max-width: 100%" ></canvas>
+                </div>
+            </div>
+
+            <div class="w-100" style="height:5px;"></div>
+
+            <div class="table-responsive m-0 p-0">
+                <table class="table table-bordered my-1">
+                    <tr style="background-color:#DDEEFF;">
+                        <th class="text-center" style="min-width:80px">Date</th>
+                        <th v-for="data,i in chart_data.labels" class="text-center"
+                            style="min-width:30px; cursor:pointer;" @click="detailLists(chart_data.data_days[i])">
+                            [[ data ]]
+                        </th>
+                    </tr>
+                    <tr v-for="data in chart_data.datasets">
+                        <th class="text-center">[[ data.label ]]</th>
+                        <td class="text-center" v-for="value in data.data"> [[ value ]] </td>
+                    </tr>
+                </table>
+
+                <table v-if="detail_lists.length > 0" class="table table-bordered my-1">
+                    <thead style="background-color:#DDEEFF;">
+                        <tr>
+                            <th class="py-1 text-center text-nowrap">No</th>
+                            <th class="py-1 text-center text-nowrap">Acc Date</th>
+                            <th class="py-1 text-center text-nowrap">Menu Name</th>
+                            <th class="py-1 text-center text-nowrap">Acc Type</th>
+                            <th class="py-1 text-center text-nowrap">Module</th>
+                            <th class="py-1 text-center text-nowrap">Function</th>
+                            <th class="py-1 text-center text-nowrap">User Info</th>
+                            <th class="py-1 text-center text-nowrap">User Department</th>
+                            <th class="py-1 text-center text-nowrap">Detail</th>
+                        </tr>
+                    </thead>
+                    <tbody v-for="data,i in detail_lists">
+                        <tr>
+                            <td class="py-1 text-center text-nowrap"> [[ i+1 ]] </td>
+                            <td class="py-1 text-start text-nowrap"> [[ data.acc_date ]] </td>
+                            <td class="py-1 text-start text-nowrap"> [[ data.menu_name ]] </td>
+                            <td class="py-1 text-start text-nowrap"> [[ data.acc_type1 ]] </td>
+                            <td class="py-1 text-start text-nowrap"> [[ data.acc_type2 ]] </td>
+                            <td class="py-1 text-start text-nowrap"> [[ data.acc_type3 ]] </td>
+                            <td class="py-1 text-start text-nowrap">
+                                {% if request.preset.user_lang == 'kr' %}
+                                    [[ data.user_name ]] [[ data.user_posi ]]
+                                {% else %}
+                                    [[ data.user_name_en ]] [[ data.user_posi_en ]]
+                                {% endif %}
+                            </td>
+                            <td class="py-1 text-center text-nowrap">
+                                {% if request.preset.user_lang == 'kr' %}
+                                    [[ data.user_org ]] </td>
+                                {% else %}
+                                    [[ data.user_org_en ]] </td>
+                                {% endif %}
+                            </td>
+                            <td class="py-1 text-start text-nowrap"> [[ data.acc_type4 ]] </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'vue-v0.18/js/dashBoard.vue.js' %}" site="{{request.preset.site}}" initMenu="1"></script>
+
+<script>
+$('.input-group.date').datepicker({
+    //daysOfWeekDisabled: "0,6",
+    daysOfWeekHighlighted: "0",
+    //startDate: "+3d",
+    todayHighlight: true,
+    autoclose: true,
+    language: '{{request.preset.user_lang}}',
+    orientation: "bottom",
+});
+</script>
+
+{% endblock %}

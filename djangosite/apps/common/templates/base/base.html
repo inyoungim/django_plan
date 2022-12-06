@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+{% load static %}
+{% load mptt_tags %}
+{% load commonModal %}
+<html type="text/html" lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <title>R&D System</title>
+        <link href="{% static 'css/bootstrap.custom-v2.css' %}" rel="stylesheet" />
+        <link href="{% static 'css/bootstrap-datepicker.css' %}" rel="stylesheet" />
+        <link href="{% static 'css/styles_v2.css' %}" rel="stylesheet" />
+        <link href="{% static 'css/bootstrap-icons.css' %}" rel="stylesheet" />
+        <link ref="favicon" href="{% static 'assets/favicon.ico' %}" />
+    </head>
+    <body>
+        <!-- include KEditor css/js -->
+        <link rel="stylesheet" href="/static/keditor/css/editor.min.css?open&_ver=3.0" type="text/css" charset="utf-8"/>
+        <script src="/static/keditor/js/jquery-3.1.1.min.js" type="text/javascript" charset="utf-8"></script>
+        <script> window._I18N_KEY = '_i18n_editor'; </script>
+        {% if request.preset.site == 'ic' %}
+            <script src="/static/keditor/lang/i18n_editor_en.js?open&_ver=3.0" type="text/javascript" charset="utf-8"></script>
+        {% else %}
+            <script src="/static/keditor/lang/i18n_editor_ko.js?open&_ver=3.0" type="text/javascript" charset="utf-8"></script>
+        {% endif %}
+        <script src="/static/keditor/js/editor_loader.min.js?open&_ver=3.0&i18n=_i18n_editor" type="text/javascript" charset="utf-8"></script>
+        <script src="/static/keditor/js/deployJava.min.js?open&_ver=3.0" type="text/javascript" charset="utf-8"></script>
+        <script src="/static/keditor/js/image_uploader.min.js?open&_ver=3.0" type="text/javascript" charset="utf-8"></script>
+        <script src="/static/keditor/js/keditor.js?open&_ver=3.0" type="text/javascript" charset="utf-8"></script>
+        <form name="keditor_form"></form>
+        <!-- end of include KEditor css/js -->
+
+        <script nomodule>window.MSInputMethodContext && document.documentMode && document.write('<link rel="stylesheet" href="/css/bootstrap-ie11.min.css"><script src="https://cdn.jsdelivr.net/combine/npm/bootstrap@5.0.0-beta2/dist/js/bootstrap.bundle.min.js,npm/ie11-custom-properties@4,npm/element-qsa-scope@1"><\/script><script crossorigin="anonymous" src="https://polyfill.io/v3/polyfill.min.js?features=default%2CNumber.parseInt%2CNumber.parseFloat%2CArray.prototype.find%2CArray.prototype.includes"><\/script>');</script>
+
+        <script>
+            var agent = navigator.userAgent.toLowerCase();
+            if( (navigator.appName == 'Netscape' && navigator.userAgent.search('Trident') != -1) ||
+                (agent.indexOf("msie") != -1) ){
+                document.location.href="/{{request.preset.site}}/ie/";
+            }
+        </script>
+
+        <!-- Bootstrap core JS-->
+        <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+        <!-- <script src="{% static 'js/nav.custom.js' %}"></script> -->
+        <!-- import bootstrap-datepicker.js after import jquery.js -->
+        <script src="{% static 'js/jquery.js' %}"></script>
+        <script src="{% static 'js/bootstrap-datepicker.js' %}"></script>
+
+        <script src="{% static 'js/vue.global.prod.js' %}"></script>
+        <script src="{% static 'js/axios.min.js' %}"></script>
+        <script src="{% static 'js/vue3-sfc-loader.js' %}"></script>
+        <script src="{% static 'js/vue3-sfc-loader-config.js' %}"></script>
+        <script>  $( function() { $("[title]").tooltip(); } );  </script>
+
+        <div class="navbar fixed-top p-0" style="background-color:#556677;">
+            <div class="container p-0 position-relative" style="height:60px;">
+                <div class="align-self-center">
+                    <div class="hstack">
+                        <a class="text-decoration-none text-white" href="{{request.preset.root_site}}" style="font-size:22px;">R&D System</a>
+                        <div class="dropdown ms-3">
+                            <button class="btn btn-secondary dropdown-toggle btn-sm" type="button" id="siteChange" data-bs-toggle="dropdown" aria-expanded="false">
+                            {{request.preset.site | upper}}
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-dark" style="min-width:50px;">
+                                {% for site in request.preset.site_list %}
+                                    {% if site != 'default' and site != 'cm' %}
+                                        <li><a class="dropdown-item" href="/{{site}}/">{{site | upper}}</a></li>
+                                    {% endif %}
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                {% if '/link/' not in request.path %}
+                    <div class="hstack nav nav-tabs">
+                        {% recursetree request.menu_list %}
+                            {% if node.get_level == 1 and node.id == request.preset.menu_top %}
+                                <div class="nav-item align-self-end text-nowrap">
+                                    <a class="nav-link text-center active" style="width:100px;">{{ node.name }}</a>
+                                </div>
+                            {% elif node.get_level == 1 and node.name == "Admin" %}
+                                <div class="nav-item align-self-end text-nowrap">
+                                    <a class="nav-link text-center text-secondary border-0 border-bottom border-secondary opacity-75"
+                                       style="width:100px;" href="{{node.path}}">{{ node.name }}</a>
+                                </div>
+                            {% elif node.get_level == 1 and node.name != "Admin" %}
+                                <div class="nav-item align-self-end text-nowrap">
+                                    <a class="nav-link bg-dark bg-opacity-75 text-center text-white border border-secondary"
+                                       style="width:100px;" href="{{node.path}}">{{ node.name }}</a>
+                                </div>
+                            {% endif %}
+                        {% endrecursetree %}
+                    </div>
+                {% endif %}
+
+                <div class="position-absolute top-0 end-0" id="topLanguageSetting">
+                    {% if request.preset.user_type != '' and request.preset.user_type != request.preset.user_emp_no %}
+                        <a href="./?su={{request.preset.user_type}}" style="color:#FFAAAA"><i class="bi bi-person-fill"></i></a>
+                    {% endif %}
+                    <font color="#DDFFDD">
+                        {% if request.preset.user_lang == "kr" %}
+                            {% if request.preset.user_type != '' %}
+                                <span ondblclick="document.location.href='./?su={{request.preset.user_type}}'">{{request.preset.user_name}}</span>
+                            {% else %}
+                                {{request.preset.user_name}}
+                            {% endif %}
+                            ({{request.preset.user_org_name}})
+                        {% else %}
+                            {% if request.preset.user_type != '' %}
+                                <span ondblclick="document.location.href='./?su={{request.preset.user_type}}'">{{request.preset.user_name_en}}</span>
+                            {% else %}
+                                {{request.preset.user_name_en}}
+                            {% endif %}
+                            ({{request.preset.user_org_name_en}})
+                        {% endif %}
+                    </font>
+                </div>
+            </div>
+        </div>
+
+        {% if request.preset.system_locked %}
+        <div class="col-4 ms-auto me-auto fixed-top mt-5">
+            <div class="rounded bg-white">
+                <div class="bg-warning bg-opacity-50 p-2 text-center text-danger"><b>System Locked temporary.</b></div>
+            </div>
+        </div>
+        {% endif %}
+
+        <span class="placeholder py-0 my-0" style="height:60px;"></span>
+
+        <div class="container d-flex flex-row p-0">
+            {% if request.path|lower != request.preset.root_site and request.preset.menu_path != None and '/link/' not in request.path%}
+            <div id="sideBarMenu" class="p-0 me-3 mb-5 bg-light bg-gradient" style=" width:220px; display:block;">
+                <span class="placeholder py-2"></span>
+                <div class="vstack">
+                {% recursetree request.menu_list %}
+                    {% if node.id == request.preset.menu_top %}
+                        <div class="hstack list-group-item justify-content-between bg-secondary rounded-top  ps-2">
+                            {% if node.path != '' %}
+                                <a class="text-decoration-none text-white ms-1" href="{{node.path}}">{{ node.name }}</a>
+                            {% else %}
+                                <span class="text-white ms-1">{{ node.name }}</span>
+                            {% endif %}
+                            <div class="bi bi-chevron-double-left text-white"
+                                 style="cursor:pointer" onClick="toggleSideBarMenu();"></div>
+                        </div>
+                        {{ children }}
+                    {% elif node.get_level > 1 %}
+                        {% if node.name|lower == 'space' or node.name|lower == '-----' %}
+                            <div style="height:20px;"></div>
+                        {% elif node.path|lower == request.path|lower %}
+                            <div class="hstack list-group-item ps-2" style="background-color:#DDEEFF">
+                                <div v-html="level({{ node.level }})"></div>
+                                {% if 'http://' in node.path|lower %}
+                                    <i class="bi bi-caret-right-fill text-danger"></i>
+                                    <a class="text-decoration-none text-black ms-1" href="{{node.path}}" target="_blank">{{ node.name }}</a>
+                                {% elif node.path != '' %}
+                                    <i class="bi bi-caret-right-fill text-danger"></i>
+                                    <a class="text-decoration-none text-black ms-1" href="{{node.path}}">{{ node.name }}</a>
+                                {% else %}
+                                    <i class="bi bi-folder-fill text-secondary"></i>
+                                    <span class="text-black ms-1">{{ node.name }}</span>
+                                {% endif %}
+                            </div>
+                        {% else %}
+                            <div class="hstack list-group-item ps-2">
+                                <div v-html="level({{ node.level }})"></div>
+                                {% if 'http://' in node.path|lower %}
+                                    <i class="bi bi-caret-right-fill text-primary"></i>
+                                    <a class="text-decoration-none text-black ms-1" href="{{node.path}}" target="_blank">{{ node.name }}</a>
+                                {% elif node.path != '' %}
+                                    <i class="bi bi-caret-right-fill text-primary"></i>
+                                    <a class="text-decoration-none text-black ms-1" href="{{node.path}}">{{ node.name }}</a>
+                                {% else %}
+                                    <i class="bi bi-folder-fill text-secondary"></i>
+                                    <span class="text-black ms-1">{{ node.name }}</span>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                        {{ children }}
+                    {% endif %}
+                {% endrecursetree %}
+                </div>
+            </div>
+            <script>
+                Vue.createApp({
+                    computed:{
+                        level(){
+                            return(level)=>{
+                                return "<div style='width:"+ (level - 2)*1 + "em;'></div>";
+                            }
+                        },
+                    }
+                }).mount('#sideBarMenu')
+            </script>
+            {% endif %}
+
+            <div class="col overflow-hidden">
+                {% if request.path|lower != request.preset.root_site and request.preset.menu_path != None %}
+                    {% if '/link/' not in request.path %}
+                    <div v-if="request.preset.menu_path" class="bg-white p-0">
+                        <span class="placeholder py-2"></span>
+                        <div class="hstack my-0 py-0" style="height:30px;">
+                            <button id="sideBarIcon" style="height:30px;display:none;"
+                                    class="btn btn-secondary me-2 py-0 px-2" style="height:10px;" onClick="toggleSideBarMenu();">
+                                <i class="bi bi-justify p-1" style="color:white;"></i>
+                            </button>
+                            <span class="align-bottom fs-5 fw-bold">※ {{request.preset.menu_path}}</span>
+                        </div>
+                        <hr style="border:1px #EEEEEE;">
+                    </div>
+
+                    <script>
+                    function toggleSideBarMenu(){
+                        var sideBarMenu = document.getElementById("sideBarMenu");
+                        var sideBarIcon = document.getElementById("sideBarIcon");
+                        if(sideBarMenu.style.display == "none"){
+                            //sideBarMenu.style.display = "block";
+                            //sideBarIcon.style.display = "none";
+                            $('#sideBarMenu').show(100);
+                            $('#sideBarIcon').hide(500);
+                        }else{
+                            //sideBarMenu.style.display = "none";
+                            //sideBarIcon.style.display = "block";
+                            $('#sideBarMenu').hide(100);
+                            $('#sideBarIcon').show(300);
+                        }
+                    }
+                    </script>
+                    {% else %}
+                    <div class="bg-white p-0">
+                        <span class="placeholder py-2"></span>
+                    </div>
+                    {% endif %}
+                {% endif %}
+
+                {% block content %}
+                <!-- page 별 content 구성 -->
+                {% endblock %}
+
+                <!-- Footer-->
+                <span class="placeholder py-1"></span>
+                <div class="container px-0 px-lg-0">
+                    <footer class="py-3">
+                        <hr style="border:1px #EEEEEE;">
+                        <div class="container px-4 px-lg-5">
+                            <p class="m-0 text-center">Copyright &copy; LG Electronics HE R&D Laboratory 2022</p>
+                        </div>
+                    </footer>
+                </div>
+                <span class="placeholder py-1"></span>
+
+            </div>
+        </div>
+
+        <div id="popup_div">
+            <popup-component :site="'{{request.preset.site}}'"
+                             :lang="'{{request.preset.user_lang}}'"
+                             :menuid="{{request.preset.menu_id}}"
+                             :urlpath="'{{request.path}}'">
+            </popup-component>
+        </div>
+        <script>
+        Vue.createApp({
+            components: {
+                'popup-component': Vue.defineAsyncComponent(
+                    () => loadModule('/static/vue-v0.18/popupComponent.vue', vueLoaderOptions) ),
+            },
+        }).mount('#popup_div')
+        </script>
+
+        {% if request.preset.user_type != "" %}
+        <!-- For only Admin : User Information of RA system -->
+        <div class="offcanvas offcanvas-start" id="offcanvasUserInfo" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1">
+            <div class="offcanvas-header bg-secondary bg-opacity-25">
+                <h5 class="offcanvas-title">User Information (request.preset.***)</h5>
+                <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+            </div>
+            <div class="offcanvas-body">
+                <div class="col input-group mb-1">
+                    <label class="input-group-text bg-warning bg-opacity-25" style="width:150px;"><b>Language</b></label>
+                    <div type="text" class="form-control col bg-warning bg-opacity-25">
+                        {{request.preset.user_lang}} --> <a href="?lang={{request.preset.user_lang}}">Change</a>
+                        [ Alt+Ctrl+z ]
+                    </div>
+                </div>
+
+                {% for data,value in request.preset.items %}
+                <div class="col input-group">
+                    <label class="input-group-text" style="width:150px;"><b>{{ data }}</b></label>
+                    <div type="text" class="form-control col" style="padding:0.1em 0.5em;"> {{value}} </div>
+                </div>
+                {% endfor %}
+
+            </div>
+        </div>
+        <div class="offcanvas offcanvas-end" id="offcanvasMoreInfo" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1">
+            <div class="offcanvas-header bg-primary bg-opacity-25">
+                <h5 class="offcanvas-title">[ {% now "Y:m:d H:i" %} ] (request.session.***)</h5>
+                <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+            </div>
+            <div class="offcanvas-body">
+                {% for data,value in request.session.items %}
+                <div class="col input-group">
+                    <label class="input-group-text" style="width:150px;"><b>{{ data }}</b></label>
+                    <div type="text" class="form-control col" style="padding:0.1em 0.5em;"> {{value}} </div>
+                </div>
+                {% endfor %}
+                <div class="col input-group">
+                    <label class="input-group-text" style="width:150px;"><b>request.today</b></label>
+                    <div type="text" class="form-control col" style="padding:0.1em 0.5em;"> {{request.today}} </div>
+                </div>
+                <div class="col input-group">
+                    <label class="input-group-text" style="width:150px;"><b>request.nextday</b></label>
+                    <div type="text" class="form-control col" style="padding:0.1em 0.5em;"> {{request.nextday}} </div>
+                </div>
+                <div class="col input-group">
+                    <label class="input-group-text" style="width:150px;"><b>request.lmday</b></label>
+                    <div type="text" class="form-control col" style="padding:0.1em 0.5em;"> {{request.lmday}} </div>
+                </div>
+                <div class="col input-group">
+                    <label class="input-group-text" style="width:150px;"><b>request.nmday</b></label>
+                    <div type="text" class="form-control col" style="padding:0.1em 0.5em;"> {{request.nmday}} </div>
+                </div>
+                <div class="col input-group">
+                    <label class="input-group-text" style="width:150px;"><b>request.nyday</b></label>
+                    <div type="text" class="form-control col" style="padding:0.1em 0.5em;"> {{request.nyday}} </div>
+                </div>
+            </div>
+        </div>
+        <script>
+            var isCtrl = false;
+            var isAlt  = false;
+            var uinfoOffcanvas = document.getElementById('offcanvasUserInfo')
+            var bsOffcanvasLeft = new bootstrap.Offcanvas(uinfoOffcanvas)
+            var bsOffcanvasRight = new bootstrap.Offcanvas(offcanvasMoreInfo)
+            var bsOffcanvasLeftOn = false;
+            var bsOffcanvasRightOn = false;
+
+            document.onkeyup=function(e){ if(event.keyCode == 17) isCtrl=false; }
+            document.onkeyup=function(e){ if(event.keyCode == 18) isAlt=false; 	}
+            document.onkeydown=function(e){
+                if(event.keyCode == 17) isCtrl=true;
+                if(event.keyCode == 18) isAlt =true;
+                if(event.keyCode == 73 && isCtrl == true && isAlt == true) {
+                    if(bsOffcanvasLeftOn)
+                        bsOffcanvasLeft.hide();
+                    else
+                        bsOffcanvasLeft.show();
+                    bsOffcanvasLeftOn = !bsOffcanvasLeftOn;
+                }
+                if(event.keyCode == 75 && isCtrl == true && isAlt == true) {
+                    if(bsOffcanvasRightOn)
+                        bsOffcanvasRight.hide();
+                    else
+                        bsOffcanvasRight.show();
+                    bsOffcanvasRightOn = !bsOffcanvasRightOn;
+                }
+                if(event.keyCode == 90 && isCtrl == true && isAlt == true) {
+                    document.location.href="?lang={{request.preset.user_lang}}";
+                }
+            }
+        </script>
+        {% endif %}
+
+        <script>
+            $(document).ready(function() {
+                var $dragging = null;
+                var offsetX = 0;
+                var offsetY = 0;
+
+                $(document.body).on("mousedown", ".modal-header", function (e) {
+                    $dragging = $(e.target.closest('.modal-content'));
+                    offsetX = e.pageX - $dragging.offset().left
+                    offsetY = e.pageY - $dragging.offset().top
+                });
+                $(document.body).on("mousemove", function(e) {
+                    if ($dragging) {
+                        $dragging.offset({
+                            top: e.pageY - offsetY,
+                            left: e.pageX - offsetX
+                        });
+                    }
+                });
+                $(document.body).on("mouseup", function (e) {
+                    $dragging = null;
+                });
+            });
+        </script>
+    </body>
+</html>

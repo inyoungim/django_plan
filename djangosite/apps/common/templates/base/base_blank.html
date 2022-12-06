@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+{% load static %}
+
+<html type="text/html" lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <title>R&D System</title>
+        <link href="{% static 'css/bootstrap.custom-v2.css' %}" rel="stylesheet" />
+        <link href="{% static 'css/bootstrap-datepicker.css' %}" rel="stylesheet" />
+        <link href="{% static 'css/styles_v2.css' %}" rel="stylesheet" />
+        <link href="{% static 'css/bootstrap-icons.css' %}" rel="stylesheet" />
+        <link ref="favicon" href="{% static 'assets/favicon.ico' %}" />
+    </head>
+    <body>
+        <!-- include KEditor css/js -->
+        <link rel="stylesheet" href="/static/keditor/css/editor.min.css?open&_ver=3.0" type="text/css" charset="utf-8"/>
+        <script src="/static/keditor/js/jquery-3.1.1.min.js" type="text/javascript" charset="utf-8"></script>
+        <script> window._I18N_KEY = '_i18n_editor'; </script>
+        {% if request.preset.site == 'ic' %}
+            <script src="/static/keditor/lang/i18n_editor_en.js?open&_ver=3.0" type="text/javascript" charset="utf-8"></script>
+        {% else %}
+            <script src="/static/keditor/lang/i18n_editor_ko.js?open&_ver=3.0" type="text/javascript" charset="utf-8"></script>
+        {% endif %}
+        <script src="/static/keditor/js/editor_loader.min.js?open&_ver=3.0&i18n=_i18n_editor" type="text/javascript" charset="utf-8"></script>
+        <script src="/static/keditor/js/deployJava.min.js?open&_ver=3.0" type="text/javascript" charset="utf-8"></script>
+        <script src="/static/keditor/js/image_uploader.min.js?open&_ver=3.0" type="text/javascript" charset="utf-8"></script>
+        <script src="/static/keditor/js/keditor.js?open&_ver=3.0" type="text/javascript" charset="utf-8"></script>
+        <form name="keditor_form"></form>
+        <!-- end of include KEditor css/js -->
+
+        <script nomodule>window.MSInputMethodContext && document.documentMode && document.write('<link rel="stylesheet" href="/css/bootstrap-ie11.min.css"><script src="https://cdn.jsdelivr.net/combine/npm/bootstrap@5.0.0-beta2/dist/js/bootstrap.bundle.min.js,npm/ie11-custom-properties@4,npm/element-qsa-scope@1"><\/script><script crossorigin="anonymous" src="https://polyfill.io/v3/polyfill.min.js?features=default%2CNumber.parseInt%2CNumber.parseFloat%2CArray.prototype.find%2CArray.prototype.includes"><\/script>');</script>
+
+        <script>
+            var agent = navigator.userAgent.toLowerCase();
+            if( (navigator.appName == 'Netscape' && navigator.userAgent.search('Trident') != -1) ||
+                (agent.indexOf("msie") != -1) ){
+                document.location.href="/{{request.preset.site}}/ie/";
+            }
+        </script>
+
+        <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+        <script src="{% static 'js/jquery.js' %}"></script>
+        <script src="{% static 'js/bootstrap-datepicker.js' %}"></script>
+
+        <script src="{% static 'js/vue.global.prod.js' %}"></script>
+        <script src="{% static 'js/axios.min.js' %}"></script>
+        <script src="{% static 'js/vue3-sfc-loader.js' %}"></script>
+        <script src="{% static 'js/vue3-sfc-loader-config.js' %}"></script>
+        <script>  $( function() { $("[title]").tooltip(); } );  </script>
+
+        <div class="container d-flex flex-row py-3">
+            <div class="col overflow-hidden">
+
+                {% block content %}
+                <!-- page 별 content 구성 -->
+                {% endblock %}
+
+            </div>
+        </div>
+
+        {% if request.preset.user_type != "" %}
+        <!-- For only Admin : User Information of RA system -->
+        <div class="offcanvas offcanvas-start" id="offcanvasUserInfo" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1">
+            <div class="offcanvas-header bg-secondary bg-opacity-25">
+                <h5 class="offcanvas-title">User Information (request.preset.***)</h5>
+                <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+            </div>
+            <div class="offcanvas-body">
+                <div class="col input-group mb-1">
+                    <label class="input-group-text bg-warning bg-opacity-25" style="width:150px;"><b>Language</b></label>
+                    <div type="text" class="form-control col bg-warning bg-opacity-25">
+                        {{request.preset.user_lang}} --> <a href="?lang={{request.preset.user_lang}}">Change</a>
+                        [ Alt+Ctrl+z ]
+                    </div>
+                </div>
+
+                {% for data,value in request.preset.items %}
+                <div class="col input-group">
+                    <label class="input-group-text" style="width:150px;"><b>{{ data }}</b></label>
+                    <div type="text" class="form-control col" style="padding:0.1em 0.5em;"> {{value}} </div>
+                </div>
+                {% endfor %}
+
+            </div>
+        </div>
+        <div class="offcanvas offcanvas-end" id="offcanvasMoreInfo" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1">
+            <div class="offcanvas-header bg-primary bg-opacity-25">
+                <h5 class="offcanvas-title">[ {% now "Y:m:d H:i" %} ] (request.session.***)</h5>
+                <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+            </div>
+            <div class="offcanvas-body">
+                {% for data,value in request.session.items %}
+                <div class="col input-group">
+                    <label class="input-group-text" style="width:150px;"><b>{{ data }}</b></label>
+                    <div type="text" class="form-control col" style="padding:0.1em 0.5em;"> {{value}} </div>
+                </div>
+                {% endfor %}
+                <div class="col input-group">
+                    <label class="input-group-text" style="width:150px;"><b>request.today</b></label>
+                    <div type="text" class="form-control col" style="padding:0.1em 0.5em;"> {{request.today}} </div>
+                </div>
+                <div class="col input-group">
+                    <label class="input-group-text" style="width:150px;"><b>request.nextday</b></label>
+                    <div type="text" class="form-control col" style="padding:0.1em 0.5em;"> {{request.nextday}} </div>
+                </div>
+                <div class="col input-group">
+                    <label class="input-group-text" style="width:150px;"><b>request.lmday</b></label>
+                    <div type="text" class="form-control col" style="padding:0.1em 0.5em;"> {{request.lmday}} </div>
+                </div>
+            </div>
+        </div>
+        <script>
+            var isCtrl = false;
+            var isAlt  = false;
+            var uinfoOffcanvas = document.getElementById('offcanvasUserInfo')
+            var bsOffcanvasLeft = new bootstrap.Offcanvas(uinfoOffcanvas)
+            var bsOffcanvasRight = new bootstrap.Offcanvas(offcanvasMoreInfo)
+            var bsOffcanvasLeftOn = false;
+            var bsOffcanvasRightOn = false;
+
+            document.onkeyup=function(e){ if(event.keyCode == 17) isCtrl=false; }
+            document.onkeyup=function(e){ if(event.keyCode == 18) isAlt=false; 	}
+            document.onkeydown=function(e){
+                if(event.keyCode == 17) isCtrl=true;
+                if(event.keyCode == 18) isAlt =true;
+                if(event.keyCode == 73 && isCtrl == true && isAlt == true) {
+                    if(bsOffcanvasLeftOn)
+                        bsOffcanvasLeft.hide();
+                    else
+                        bsOffcanvasLeft.show();
+                    bsOffcanvasLeftOn = !bsOffcanvasLeftOn;
+                }
+                if(event.keyCode == 75 && isCtrl == true && isAlt == true) {
+                    if(bsOffcanvasRightOn)
+                        bsOffcanvasRight.hide();
+                    else
+                        bsOffcanvasRight.show();
+                    bsOffcanvasRightOn = !bsOffcanvasRightOn;
+                }
+            }
+        </script>
+        {% endif %}
+
+        <script>
+            $(document).ready(function() {
+                var $dragging = null;
+                var offsetX = 0;
+                var offsetY = 0;
+
+                $(document.body).on("mousedown", ".modal-header", function (e) {
+                    $dragging = $(e.target.closest('.modal-content'));
+                    offsetX = e.pageX - $dragging.offset().left
+                    offsetY = e.pageY - $dragging.offset().top
+                });
+                $(document.body).on("mousemove", function(e) {
+                    if ($dragging) {
+                        $dragging.offset({
+                            top: e.pageY - offsetY,
+                            left: e.pageX - offsetX
+                        });
+                    }
+                });
+                $(document.body).on("mouseup", function (e) {
+                    $dragging = null;
+                });
+            });
+        </script>
+    </body>
+</html>

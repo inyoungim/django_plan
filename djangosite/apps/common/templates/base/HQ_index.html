@@ -1,0 +1,125 @@
+{% extends "base/base.html" %}
+{% load static %}
+{% load commonModal %}
+
+{% block content %}
+<!-- Page Content-->
+<div class="container px-1 px-lg-1">
+
+    <!-- Heading Row-->
+    <div class="row gx-4 gx-lg-5 align-items-center">
+        <div class="col-lg-6">
+            <h1 class="font-weight-light">HE 연구소</h1>
+            <p class="m-1">연구소 Homepage 에 오신 것을 환영합니다.</p>
+            <p class="m-1">연구소 업무 효율화 및 자동화를 지원하는 Virtual Space 입니다.</p>
+            <p class="mt-4 m-1">연구소 전체 예산/자산 관리 및 비부가 가치 업무 관련 개선 아이디어가 있을 경우 HE개발기획실 과 협의해 주시기 바랍니다.</p>
+
+            <div class="row gx-4 gx-lg-5">
+                <div class="card-body">
+                    <div class="card-text m-1">
+                        <a class="btn btn-primary btn-sm" href="http://crn.lge.com/" target="_blank">
+                            구 CRN 시스템 바로 가기
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <img class="img-fluid rounded mb-4 mb-lg-0" src="{%static 'img/apple-1868496_640.jpg' %}" />
+        </div>
+    </div>
+
+
+
+    <!-- Content Row-->
+    <div class="row gx-4 gx-lg-5">
+        <div class="col-md-4 mb-5">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h2 class="card-title mb-3"><i class="bi bi-laptop text-primary m-2"></i>Infra</h2>
+                    <p class="card-text m-1">
+                        {% if request.preset.user_lang == 'kr' %}
+                            시스템 게시판 운영
+                        {% else %}
+                            Board for system operation
+                        {% endif %}
+                    </p>
+                    <p class="card-text m-1">
+                        {% if request.preset.user_lang == 'kr' %}
+                            시스템 Q&A 및 개선 사항 건의
+                        {% else %}
+                            Q&A Board : question or propose idea for system
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="card-footer text-end">
+                    <a class="btn btn-primary btn-sm" style="min-width:50px;" href="/hq/apps/boards/1/">Go</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-5">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h2 class="card-title mb-3"><i class="bi bi-cash-coin text-primary m-2"></i>Budget/Asset</h2>
+                    <p class="card-text m-1">
+                        {% if request.preset.user_lang == 'kr' %}
+                            예산 관리 : 연구소 예산 수립 및 집행
+                        {% else %}
+                            Budget Management : Planning and execution of Laboratory budget.
+                        {% endif %}
+                    </p>
+                    <p class="card-text m-1">
+                        {% if request.preset.user_lang == 'kr' %}
+                            자산 관리 : 투자 자산, 경상시험 연구비 사용 자산 관리
+                        {% else %}
+                            Asset Management : Management investment assets or for ordinary development expense.
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="card-footer text-end">
+                    <a class="btn btn-primary btn-sm" style="min-width:50px;" href="/hq/apps/budget/">Go</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-5">
+            <div class="card h-100 ">
+                <div class="card-body">
+                    <h2 class="card-title mb-3"><i class="bi bi-gear text-primary m-2"></i>Utility</h2>
+                    <p class="card-text m-1">
+                        {% if request.preset.user_lang == 'kr' %}
+                            개발 재료비 : 모델 개발 재료비
+                        {% else %}
+                            Material Cost : Material Cost of model name.
+                        {% endif %}
+                    </p>
+                    <p class="card-text m-1">
+                        {% if request.preset.user_lang == 'kr' %}
+                            BOM 진척 현황 : 모델별 BOM 작성 진척 현황 모니터링
+                        {% else %}
+                            BOM Progress : BOM progress in GPDM system.
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="card-footer text-end">
+                    <a class="btn btn-primary btn-sm" style="min-width:50px;" href="/hq/apps/materialcost/">Go</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Call to Action-->
+    <div class="card text-white bg-secondary my-0 py-3 text-center">
+        <div class="card-body">
+            <p class="text-white m-0 fs-5">
+                {% if request.preset.user_lang == 'kr' %}
+                    현재 연구소 홈페이지는 개발 중 상태이며, 테스트 용으로만 사용할 수 있습니다.
+                {% else %}
+                    R&D System is being developed, so use for only test.
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

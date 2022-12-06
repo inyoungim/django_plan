@@ -1,0 +1,504 @@
+{% extends "base/base.html" %}
+{% load static %}
+{% load commonModal %}
+
+{% block content %}
+{% common_dialog %}
+<script src="{% static 'js/bootstrap-datepicker.ko.js' %}" charset="UTF-8"></script>
+
+<div class="container px-0" id="vue3-top-object" v-cloak>
+    <div class="callout callout-primary mb-3">
+        <strong>{{ board_master.name }}</strong>
+        <br>{{ board_master.description | safe }}
+    </div>
+
+    <div v-if="page_mode == 'list'">
+        <div class="row my-1">
+            <div v-if="div_list.length > 1" class="col-auto me-auto">
+                <div class="input-group" style="width:140px;">
+                    <span class="input-group-text">Division</span>
+                    <select v-model="div_name" class="form-select"
+                        @change="changeDiv" :disabled="div_list.length <= 1">
+                        <option value="ALL"> ALL </option>
+                        <option v-for="div in div_list" :value="div">[[ div ]]</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-auto ms-auto">
+                <div class="input-group shadow-sm">
+                    <span class="input-group-text" style="width:80px;">Title</span>
+                    <input class="form-control shadow-sm" placeholder="Search Text" v-model="tdata.search_text" @keyup.enter="search_data">
+                    <button class="btn btn-secondary shadow-sm" style="width:100px;" @click="search_data">Search</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr><td colspan="10" style="background-color:#99AAAA; margin:0px;padding:0px; height:2px"></td></tr>
+                    <tr class="table-primary">
+                        <th scope="col" class="text-center" width="50px;">No</th>
+                        <th v-if="div_list.length > 1" scope="col" class="text-center">Division</th>
+                        <th scope="col" class="text-center" width="30px;"><i class="bi bi-paperclip"></i></th>
+                        <th scope="col" class="col-7 text-start">Title</th>
+                        <th scope="col" class="text-center">User</th>
+                        <th scope="col" class="text-center">Date</th>
+                        <th scope="col" class="text-center">Hit</th>
+                    </tr>
+                </thead>
+                <tbody class="shadow-sm">
+                    <tr v-for="d in tdata.data_list">
+                        <td class="text-center" style="cursor:pointer;" @click="item_detail(d.id)">[[ d.id ]]</td>
+                        <td v-if="div_list.length > 1" class="text-center">[[ d.div_name ]]</td>
+                        <td class="text-center"><p class="m-0" v-html="attached_icon(d.attached_count)"></p></td>
+                        <td class="text-start" style="cursor:pointer;" @click="item_detail(d.id)">
+                            {% if board_master.board_type == "QNA" %}
+                                <span v-if="d.answer_count > 0"><i class="bi bi-question-circle-fill text-primary"></i></span>
+                                <span v-else><i class="bi bi-question-circle text-danger"></i></span>
+                            {% endif %}
+                            <i v-if="d.id != d.group_id" class="bi bi-arrow-return-right ms-3"></i> [[ d.title ]]
+                        </td>
+                        {% if request.preset.user_lang == "kr" %}
+                            <td class="text-center">[[ d.owner_name ]]</td>
+                        {% else %}
+                            <td class="text-center">[[ d.owner_name_en ]]</td>
+                        {% endif %}
+                        <td class="text-center">[[ d.modify_date ]]</td>
+                        <td class="text-center">[[ d.hit_count ]]</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="panel-footer">
+            <div class="row">
+                <div class="col-md-3 col-12" role="group">
+                    <div class="dropdown">
+                        <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownNumberButton"
+                            data-bs-toggle="dropdown" data-bs-auto-close="true" aria-expanded="false"> [[ page_num ]] </button>
+                        <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="dropdownNumberButton" style="min-width:50px;" >
+                            <li><a class="dropdown-item" :class="{active: page_num == 10}" href="#" @click="page(tdata.active_page, 10, $event)">10</a></li>
+                            <li><a class="dropdown-item" :class="{active: page_num == 20}" href="#" @click="page(tdata.active_page, 20, $event)">20</a></li>
+                            <li><a class="dropdown-item" :class="{active: page_num == 50}" href="#" @click="page(tdata.active_page, 50, $event)">50</a></li>
+                            <li><a class="dropdown-item" :class="{active: page_num == 100}" href="#" @click="page(tdata.active_page, 100, $event)">100</a></li>
+                        </ul>
+                        Total [[ tdata.total_article ]] articles
+                    </div>
+                </div>
+                <div class="col-md-6 col-12">
+                    <ul class="pagination justify-content-center">
+
+                        <li class="page-item" :class="{disabled : tdata.previous_page == 0}" >
+                            <a class="page-link text-center mx-1 px-3" aria-label="Previous"
+                               :style="{color:previous_text_color}"
+                               href="#" @click="page(tdata.previous_page, page_num, $event)"> &Lang;&Lang; </a>
+                        </li>
+
+                        <li v-for="p in tdata.page_list" :class="['page-item', { active: tdata.active_page === p }]">
+                            <a class="page-link" href="#" @click="page(p, page_num, $event)">[[ p ]]</a>
+                        </li>
+
+                        <li class="page-item" :class="{disabled : tdata.next_page == 0}">
+                            <a class="page-link text-center mx-1 px-3" aria-label="Next"
+                               :style="{color:next_text_color}"
+                                href="#"  @click="page(tdata.next_page, page_num, $event)"> &Rang;&Rang; </a>
+                            </a>
+                        </li>
+
+                    </ul>
+                </div>
+                <div class="col-md-3 col-12 text-end">
+                    {% if request.preset.menu_acl > 3 and board_master.id %}
+                    <button type="button" class="btn btn-primary shadow-sm" style="width:100px;" @click="new_page">New</button>
+                    {% else %}
+                    <button type="button" class="btn btn-secondary" style="width:100px;" disabled>New</button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- board contents area  -->
+    <div class="vstack" v-if="page_mode != 'list'" >
+
+        <div class="col d-flex my-1 text-start">
+            <div v-if="page_mode == 'detail' && {{request.preset.menu_acl}} >= 7
+                    && '{{board_master.board_type}}' == 'DATA' && active_list.length > 0"
+                class="ms-auto text-end hstack">
+                <div v-if="active_list[0].popup && active_list[0].popup.id"
+                     class="form-control bg-warning bg-opacity-25 mx-1" style="padding:0.1em 0.5em;">
+                    <i class="bi bi-chat-square-text"></i>
+                    [[ active_list[0].popup.popup_sdate ]] ~ [[ active_list[0].popup.popup_edate ]]
+                    : [[active_list[0].popup.target_menu]]
+                </div>
+                <button class="btn btn-darkcyan ms-auto" type="button" style="min-width:60px;padding:0.1em 0.5em;"
+                    @click="showPopupModal">Pop-up</button>
+
+                <button v-if="{{request.preset.user_type}} != ''" class="btn btn-danger ms-2"
+                        type="button" style="padding:0.1em 0.5em;"
+                    @click="showMoveToModal"><span class="text-nowrap">Move To</span></button>
+            </div>
+
+        </div>
+
+        <form role="form">
+            {% csrf_token %}
+            <!-- repeat board data -->
+            <div v-for="item in active_list">
+                <div v-if="'{{board_master.board_type}}' == 'QNA' && item.id == item.group_id" class="row">
+                    <div class="col">
+                        <i class="bi bi-question-square-fill text-primary fs-2"></i>
+                        <span class="fs-2 ms-2">Question</span>
+                    </div>
+                    <div v-if="{{request.preset.user_type}} != ''" class="col py-2 text-end">
+                        <button class="btn btn-danger" type="button" style="padding:0.1em 0.5em;"
+                            @click="showMoveToModal"><span class="text-nowrap">Move To</span></button>
+                    </div>
+                </div>
+
+                <div v-if="'{{board_master.board_type}}' == 'QNA' && item.id != item.group_id">
+                    <i class="bi bi-check-square-fill text-danger fs-2"></i>
+                    <span class="fs-2 ms-2">Answer</span>
+                </div>
+
+                <div class="row g-1">
+                    <div class="col">
+                        <div class="col input-group">
+                            <label class="input-group-text" style="width:100px;"><b>Title</b></label>
+                            <input class="form-control bg-white" type="text"
+                                   :disabled="page_mode == 'detail' || page_mode == 'reply' "
+                                   name="Title" v-model="item.title" required>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <span class="form-control bg-white text-secondary">
+                            {% if request.preset.user_lang == "kr" %}
+                                <font size="1">[[ item.owner_name ]] | [[item.modify_date]]</font>
+                            {% else %}
+                                <font size="1">[[ item.owner_name_en ]] | [[item.modify_date]]</font>
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="row mt-1" >
+                    <div class="col input-group">
+                        <span class="input-group-text" style="width:100px;"><b>Content</b></span>
+                        <div v-if="page_mode == 'new' || (page_mode == 'modify' && edit_item == item)" class="col">
+                            <div :id="'keditor_wrapper'+item.id" name="contents" required></div>
+                        </div>
+                        <div v-if="page_mode == 'detail' || edit_item != item" class="col">
+                            <div class="form-control" style="min-height:200px;"><note-contents v-html="item.contents"></note-contents></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-1">
+                    <div class="input-group">
+                        <label class="input-group-text" style="width:100px;"><b>Attached</b></label>
+                        <div class="col" v-if="page_mode == 'modify' && edit_item == item">
+                            <attached-file-component ref="attachedFileComponentM"
+                                                     :attached_list="item.attached_files"
+                                                     :mode="page_mode"></attached-file-component>
+                        </div>
+                        <div class="col" v-else>
+                            <attached-file-component :attached_list="item.attached_files"></attached-file-component>
+                        </div>
+                    </div>
+                </div>
+
+                {% if board_master.comments_yn %}
+                <div class="row mt-1">
+                    <div class="input-group">
+                        <label class="input-group-text" style="width:100px;"><b>Comments</b></label>
+                        <div class="col border">
+                            <comments-component ref="commentsComponent"
+                                                :site="'{{request.preset.site}}'"
+                                                :lang="'{{request.preset.user_lang}}'"
+                                                :pid="item.id"
+                                                :acl="{{request.preset.menu_acl}}"
+                                                :empno="'{{request.preset.user_emp_no}}'"
+                                                :mode="page_mode">
+                            </comments-component>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if request.preset.menu_acl >= 5 %}
+                <div class="col text-end my-2">
+                    <button v-if="page_mode == 'new'"
+                            class="btn btn-primary ms-2" @click="form_submit">Submit Form</button>
+                    <button v-if="page_mode == 'modify' && edit_item == item "
+                            class="btn btn-primary ms-2" style="width:80px;padding:0.1em 0.5em;" @click="form_update">Update</button>
+                    <button v-if="page_mode == 'modify' && edit_item == item "
+                            class="btn btn-secondary ms-2" style="width:80px;padding:0.1em 0.5em;" @click="form_cancel">Cancel</button>
+
+                    {% if board_master.reply_yn and board_master.board_type == "QNA" %}
+                        {% if request.preset.menu_acl >= 7 %}
+                        <button v-if="page_mode == 'detail' && item.id == item.group_id"
+                            class="btn btn-success ms-2 shadow" style="width:80px;padding:0.1em 0.5em;" @click="make_reply(item)">Answer</button>
+                        {% endif %}
+                    {% elif board_master.reply_yn %}
+                        <button v-if="page_mode == 'detail' && item.id == item.group_id"
+                            class="btn btn-success ms-2 shadow" style="width:80px;padding:0.1em 0.5em;" @click="make_reply(item)">Reply</button>
+                    {% endif %}
+
+                    <button v-if="(page_mode == 'detail' && ('{{request.preset.user_emp_no}}' ==  item.owner_empno ||
+                                  {{request.preset.menu_acl}} >= 9) )"
+                            class="btn btn-primary ms-2 shadow" style="width:80px;padding:0.1em 0.5em;" @click="form_modify(item,$event)">Modify</button>
+                    <button v-if="(page_mode == 'detail' && ('{{request.preset.user_emp_no}}' ==  item.owner_empno ||
+                                  {{request.preset.menu_acl}} >= 9) )"
+                            class="btn btn-danger ms-2 shadow" style="width:80px;padding:0.1em 0.5em;" @click="form_delete(item,$event)">Delete</button>
+                </div>
+                {% endif %}
+                <div class="w-100 py-3 my-2"></div>
+            </div>
+
+
+
+            <div v-if="page_mode == 'new' || page_mode == 'reply' ">
+                <div class="row mt-1">
+                    <div class="col input-group">
+                        <label class="input-group-text" style="width:100px;"><b>Title</b></label>
+                        <input class="form-control bg-white" type="text"
+                               name="Title" v-model="edit_item.title" required>
+                    </div>
+                </div>
+
+                <div class="row mt-1" >
+                    <div class="col input-group">
+                        <span class="input-group-text" style="width:100px;"><b>Content</b></span>
+                        <div class="col">
+                            <div id="keditor_wrapper" name="contents" required></p></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-1">
+                    <div class="input-group">
+                        <label class="input-group-text" style="width:100px;"><b>Attached</b></label>
+                        <div class="col">
+                            <attached-file-component ref="attachedFileComponentN"
+                                                     :site="'{{request.preset.site}}'"
+                                                     :lang="'{{request.preset.user_lang}}'"
+                                                     :mode="page_mode"></attached-file-component>
+                        </div>
+                    </div>
+                </div>
+
+                {% if request.preset.menu_acl >= 5 %}
+                <div class="w-100 py-3 my-2"></div>
+                <div class="col text-center my-2">
+                    <button class="btn btn-primary ms-2" @click="form_submit">Submit Form</button>
+                    <button v-if="page_mode == 'new'" class="btn btn-secondary ms-2"
+                            style="width:100px" @click="back_to_list">Cancel</button>
+                    <button v-if="page_mode == 'reply'" class="btn btn-secondary ms-2"
+                            style="width:100px" @click="form_cancel">Cancel</button>
+                </div>
+                {% endif %}
+                <div class="w-100 py-3 my-2"></div>
+            </div>
+
+            <!-- end of repeat board data  -->
+        </form>
+
+        <div class="row my-1 text-center">
+            <div class="col"></div>
+            <div class="col">
+                <button v-if="page_mode == 'detail'" class="btn btn-primary mx-2" type="button"
+                        style="min-width:90px;" @click="distributeFormMain">Distribute</button>
+                <button v-if="page_mode == 'detail'" class="btn btn-secondary mx-2" type="button"
+                        style="min-width:90px;" @click="back_to_list">Back to List</button>
+            </div>
+            <div class="col text-end">
+                <button v-if="page_mode == 'detail'" class="btn btn-darkcyan" type="button"
+                        style="min-width:90px;" @click="make_link_info">Copy Information Link</button>
+            </div>
+
+        </div>
+    </div>
+    <!-- board contents area  -->
+
+    <div v-if="showDistributionModal" class="col">
+        <distribution-board-modal-component
+            ref="distributionBoardModalComponent"
+            :site="'{{request.preset.site}}'"
+            :lang="'{{request.preset.user_lang}}'"
+            :doc_id="active_list[0].id"
+            @close-modal="showDistributionModal=false">
+        </distribution-board-modal-component>
+    </div>
+
+    <div v-if="popupModal" class="vue_modal" style="z-index: 9990;">
+        <div class="vue_overlay"></div>
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+
+            <div class="modal-content text-center">
+                <div class="modal-header py-2 bg-success text-white" style="cursor:move">
+                    <h4 class="col"> Pop-up Management </h4>
+                    <button type="button" class="btn-close btn-close btn-close-white" @click="popupModal=false"></button>
+                </div>
+                <div class="modal-body border" style="min-height:100px;">
+                    <div v-if="div_list.length > 1" class="col hstack mt-1">
+                        <div class="col input-group">
+                            <label class="input-group-text" style="width:100px;"><b>Division</b></label>
+                            <input class="form-control" type="text"
+                                   :disabled="div_list.length == 1"
+                                   v-model="edit_item.popup.div_name"
+                                name="Division">
+                        </div>
+                    </div>
+                    <div v-else>
+                        <input type="hidden" v-model="edit_item.popup.div_name">
+                    </div>
+                    <div class="col hstack mt-1">
+                        <div class="input-group date" id="sdate">
+                            <label class="input-group-text" :class="{'text-danger': isInvalid(edit_item)}" style="width:100px;">
+                                <b>Start Date</b>
+                            </label>
+                            <input type="text" class="form-control" aria-describedby="date-range-1"
+                                   v-model="edit_item.popup.popup_sdate" ref="sdate"
+                                   name="Start Date" required>
+                            <span class="input-group-addon input-group-text" id="date-range-1">
+                                <i class="bi bi-calendar-date"></i>
+                            </span>
+                        </div>
+
+                        <div class="input-group date ps-1" id="edate" >
+                            <label class="input-group-text" :class="{'text-danger': isInvalid(edit_item)}" style="width:100px;"><b>End Date</b></label>
+                            <input type="text" class="form-control" aria-describedby="date-range-2"
+                                   v-model="edit_item.popup.popup_edate" ref="edate"
+                                   name="End Date" required>
+                            <span class="input-group-addon input-group-text" id="date-range-2">
+                                <i class="bi bi-calendar-date"></i>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col hstack mt-1">
+                        <div class="col input-group">
+                            <label class="input-group-text" style="width:100px;"><b>Target ID</b></label>
+                            <input class="form-control" disabled type="text" v-model="edit_item.popup.target_id"
+                                name="Target ID" required>
+                            <button class="input-group-text" @click="openMenuSelectModal">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col hstack mt-1">
+                        <div class="col input-group">
+                            <label class="input-group-text" style="width:100px;"><b>Target Menu</b></label>
+                            <input class="form-control" disabled type="text" :value="edit_item.popup.target_menu">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="col text-center">
+                        {% if request.preset.menu_acl >= 7 %}
+                            <button class="btn btn-primary mx-2" type="button" style="min-width:90px;" @click="popupUpdate">Update</button>
+                            <button class="btn btn-danger mx-2" type="button" style="min-width:90px;" @click="popupClear">Clear</button>
+                        {% endif %}
+
+                        <button v-if="page_mode == 'detail' || page_mode == 'new'"
+                                class="btn btn-secondary mx-3" type="button" style="min-width:90px;" @click="popupModal=false">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div v-if="menuSelectModal" class="vue_modal" style="z-index: 9991;">
+        <div class="vue_overlay"></div>
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content text-center">
+                <div class="modal-header py-2 bg-success text-white" style="cursor:move">
+                    <h4 class="col">Menu Select Dialog</h4>
+                    <button type="button" class="btn-close btn-close btn-close-white" @click="menuSelectModal=false"></button>
+                </div>
+
+                <div class="modal-body" style="min-height:150px; max-height:400px;">
+                    <menu-list-component :site="'{{request.preset.site}}'"
+                                         :lang="'{{request.preset.user_lang}}'"
+                                         :menus="{{request.menuList}}"
+                                         @select-menu="menuSelected"></menu-list-component>
+                </div>
+                <div class="modal-footer">
+                    <div class="w-100">
+                        <button class="btn btn-primary mx-2" type="button" style="min-width:90px;" @click="targetMenuSelect">Select</button>
+                        <button class="btn btn-primary mx-2" type="button" style="min-width:90px;" @click="targetMenuCancel">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div v-if="moveToModal" class="vue_modal" style="z-index: 9991;">
+        <div class="vue_overlay"></div>
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content text-center">
+                <div class="modal-header py-2 bg-success text-white" style="cursor:move">
+                    <h4 class="col">Move Article Dialog</h4>
+                    <button type="button" class="btn-close btn-close btn-close-white" @click="moveToModal=false"></button>
+                </div>
+
+                <div class="modal-body" style="min-height:150px; max-height:400px;">
+                    <board-move-to-component
+                            ref="boardMoveToComponent"
+                            :site="'{{request.preset.site}}'"
+                            :lang="'{{request.preset.user_lang}}'"
+                            :boardid="{{request.session.boardid}}"
+                            @dbl-click="moveToSelected"></board-move-to-component>
+                </div>
+                <div class="modal-footer">
+                    <div class="w-100">
+                        <button class="btn btn-primary mx-2" type="button" style="min-width:90px;" @click="moveToSelected">Select</button>
+                        <button class="btn btn-primary mx-2" type="button" style="min-width:90px;" @click="moveToModal=false">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <span id="infolinkid" style="display:none;">
+        <div class="border rounded" style="width:500px;">
+            <div class="vstack border-bottom text-center">
+                <div class="p-1" style="background-color:#EEEEEE;">
+                    <a href='http://rnd.lge.com/{{request.preset.site}}/' target='_blank' class="col fs-4 text-decoration-none">
+                        R&amp;D System
+                    </a>
+                </div>
+
+                <div class="col">
+                    <div class="d-flex align-items-center" style="min-height:100px;">
+                        <div class="col text-start px-2">
+                            <a :href="'http://rnd.lge.com/{{request.preset.site}}/appid/{{request.preset.menu_id}}/' + url_link" target='_blank'>
+                                <div class="col text-start px-2">※ {{request.preset.menu_path}}</div>
+                                <div class="col text-start px-2">
+                                    <span class="col ps-4">Title : </span>
+                                    <span class="col p-0">[[ info_title ]]</span>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col border-top p-1">
+                    <div class="col">
+                        Please, click link to go to document.
+                    </div>
+                </div>
+            </div>
+        </div>
+        <hr align=left width='500' height='1'>
+    </span>
+
+</div>
+
+<script src="{% static 'vue-v0.18/js/boardTemplate.vue.js' %}"
+        boardid="{{request.session.boardid}}"
+        div_list="{{request.preset.user_custom_div}}"
+        lang="{{request.preset.user_lang}}"></script>
+
+{% endblock %}
