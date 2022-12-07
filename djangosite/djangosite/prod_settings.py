@@ -11,11 +11,27 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',  # mysqlclient librarly 설치
         'NAME': 'DJ_DEFAULT',
-        'USER': '',
-        'PASSWORD': '',  # mariaDB 설치 시 입력한 root 비밀번호 입력
+        'USER': 'cmuser',
+        'PASSWORD': 'rnjsdhdud1@',  # mariaDB 설치 시 입력한 root 비밀번호 입력
         'HOST': 'localhost',
         'PORT': '3306'
-    },   
+    },
+    'cm': {
+        'ENGINE': 'django.db.backends.mysql',  # mysqlclient librarly 설치
+        'NAME': 'CM',
+        'USER': 'cmuser',
+        'PASSWORD': 'rnjsdhdud1@',  # mariaDB 설치 시 입력한 root 비밀번호 입력
+        'HOST': 'localhost',
+        'PORT': '3306'
+    },
+    'hq': {
+        'ENGINE': 'django.db.backends.mysql',  # mysqlclient librarly 설치
+        'NAME': 'HQ',
+        'USER': 'hquser',
+        'PASSWORD': 'rnjsdhdud1@',  # mariaDB 설치 시 입력한 root 비밀번호 입력
+        'HOST': 'localhost',
+        'PORT': '3306'
+    },
 }
 
 '''

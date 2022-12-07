@@ -1,4 +1,3 @@
-import cx_Oracle
 from django.forms import model_to_dict
 from django.http import JsonResponse
 from rest_framework import serializers, exceptions

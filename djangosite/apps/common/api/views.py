@@ -2,7 +2,6 @@ import math
 import re
 from datetime import timedelta
 
-import cx_Oracle
 from django.core.files.storage import FileSystemStorage
 from django.db import connections
 from django.db.models import Q
@@ -94,7 +93,7 @@ def partSearch(request, site):
 
     # TODO : (GERP MFG COST I/F) PART NUMBER 검색 INTERFACE 추가 후 수정
     try:
-        db = cx_Oracle.connect("DISPLAY", "DISPLAY", "156.147.147.223:1530/LGCRNP")
+        db = null
     except:
         raise exceptions.ParseError("Can not connect Oracle DB.")
 
@@ -201,122 +200,8 @@ def partSearch(request, site):
 
 @api_view(['GET'])
 def modelSearch(request, site):
-    active_page = int(request.GET.get('active_page', 1))  # request.GET['active_page']
-    page_num = int(request.GET.get('page_num', 10))  # request.GET['page_num']
-    search_text = request.GET.get('search_text', '')  # request.GET['search_text']
 
-    if len(search_text) < 6:
-        raise exceptions.ParseError("Please, input more than 6 digits.")
-
-    # TODO : (GERP MFG COST I/F) 모델 검색 INTERFACE 추가 후 수정
-    try:
-        db = cx_Oracle.connect("DISPLAY", "DISPLAY", "156.147.147.223:1530/LGCRNP")
-    except:
-        raise exceptions.ParseError("Can not connect Oracle DB.")
-
-    # 조건에 맞는 data 갯수, page list 조회
-    if search_text == '':
-        return JsonResponse(data={}, safe=False)
-    try:
-        query = f""" SELECT COUNT(ROW_NUM)
-                       FROM ( SELECT ROWNUM AS ROW_NUM , A.*
-                              FROM (  SELECT COST_DIVISION_CODE, PERIOD_NAME, ITEM_NO, ITEM_DESCRIPTION, ENDING_PERIODIC_COST,
-                                             ROW_NUMBER() OVER(PARTITION BY ITEM_NO ORDER BY TRANSFER_DATE DESC) AS RN 
-                                      FROM XXGMFG_PAC_COST_IF
-                                      WHERE ITEM_NO LIKE '{search_text}%'
-                                   ) A
-                              WHERE A.RN = 1
-                        )
-                    """
-        cursor = db.cursor()
-        cursor.execute(query)
-        total_article = max(cursor.fetchone())
-    except:
-        total_article = 0
-    if total_article == 0:
-        data = { "data_list": [], "page_list": [1], "previous_page": 0,
-                 "active_page": 1, "next_page": 0, "total_article": 0, }
-        return JsonResponse(data, safe=False)
-
-    total_page = (total_article // page_num) + 1
-    if total_article % page_num == 0:
-        total_page -= 1
-
-    page_block = active_page // 5
-    if active_page % 5 == 0: page_block -= 1
-    previous_page = page_block * 5
-    next_page = previous_page + 6
-    if next_page > total_page:
-        next_page = total_page
-    if active_page > next_page:
-        previous_page = 0
-        active_page = 1
-
-    page_list = []
-    page_s = previous_page + 1
-    while page_s <= next_page:
-        page_list.append(page_s)
-        page_s += 1
-        if page_s > previous_page + 5: break
-    if next_page in page_list:
-        next_page = 0
-
-    start_num = (active_page - 1) * page_num
-    if start_num < 0:
-        start_num = 0
-
-    sql = f""" SELECT *
-                   FROM ( SELECT ROWNUM AS ROW_NUM , A.*
-                          FROM (  SELECT COST_DIVISION_CODE, PERIOD_NAME, ITEM_NO, ITEM_DESCRIPTION, ENDING_PERIODIC_COST,
-                                         ROW_NUMBER() OVER(PARTITION BY ITEM_NO ORDER BY TRANSFER_DATE DESC) AS RN 
-                                  FROM XXGMFG_PAC_COST_IF
-                                  WHERE ITEM_NO LIKE '{search_text}%'
-                               ) A
-                          WHERE A.RN = 1
-                        )
-                   WHERE ROW_NUM >= '{start_num}' AND ROW_NUM < '{start_num + page_num}'
-                   """
-    cursor = db.cursor()
-    cursor.execute(sql)
-    cursor.rowfactory = make_dict(cursor)
-    alldata = cursor.fetchall()
-
-    item_list = []
-    for rowdata in alldata:
-        temp_data = {}
-        temp_data['div_code'] = rowdata['COST_DIVISION_CODE']
-        temp_data['period_name'] = rowdata['PERIOD_NAME']
-        temp_data['model_name'] = rowdata['ITEM_NO']
-        temp_data['model_cost'] = math.ceil(rowdata['ENDING_PERIODIC_COST'])
-
-        model_name = rowdata['ITEM_NO']
-        sql = f"""  SELECT MODEL_NAME, PROJECT_NAME, COST_CODE, GRADE_CODE 
-                    FROM COMM_BUDGET_MODEL_MGMT
-                    WHERE MODEL_NAME = '{model_name}'
-                """
-        cursor = db.cursor()
-        cursor.execute(sql)
-        cursor.rowfactory = make_dict(cursor)
-        spec_data = cursor.fetchone()
-        if spec_data:
-            temp_data['project_name'] = spec_data["PROJECT_NAME"]
-            temp_data['project_code'] = spec_data["COST_CODE"]
-            temp_data['project_grade'] = spec_data["GRADE_CODE"]
-
-        item_list.append(temp_data)
-
-    cursor.close()
-    db.close()
-
-    data = {
-        "searchList": item_list,
-        "page_list": page_list,
-        "previous_page": previous_page,
-        "active_page": active_page,
-        "next_page": next_page,
-        "total_article": total_article,
-    }
-    return JsonResponse(data, safe=False)
+    return JsonResponse(data={}, safe=False)
 
 
 @api_view(['GET'])
@@ -328,42 +213,7 @@ def assetSearch(request, site):
 @api_view(['GET'])
 def pcbPartNumberSearch(request, site):
     pcb_part = request.GET.get('search_text', '')
-
-    # TODO : (GPDM I/F) : NEW GPDM OPEN 전까지 ORACLE 사용 필요 : GPDM PCB PART NUMBER 검색 INTERFACE 추가 후 수정
-    try:
-        db = cx_Oracle.connect("DISPLAY", "DISPLAY", "156.147.147.223:1530/LGCRNP")
-    except:
-        raise exceptions.ParseError("Can not connect Oracle DB.")
-
-    if len(pcb_part) < 9:
-        raise exceptions.ParseError("Please, input more than 9 digits.")
-    else:
-        au_code_list = ['GLZ.EKHQ', 'GMZ.EKHQ', 'PNZ.EKHQ']
-        for au_code in au_code_list:
-            sql = f""" select PP_M1_NAME, PP_M1_REVISION, PP_M1_STATE, PP_M1_ORIGINATOR  
-                from table(display.GPDM_GET_PCB('{pcb_part}%', '{au_code}', '', '', '')) 
-                """
-            cursor = db.cursor()
-            cursor.execute(sql)
-            cursor.rowfactory = make_dict(cursor)
-            alldata = cursor.fetchall()
-            if len(alldata) > 0:
-                break
-
-        item_list = []
-        for rowdata in alldata:
-            temp_data = {}
-            temp_data['PP_M1_NAME'] = rowdata['PP_M1_NAME']
-            temp_data['PP_M1_REVISION'] = rowdata['PP_M1_REVISION']
-            temp_data['PP_M1_STATE'] = rowdata['PP_M1_STATE']
-            temp_data['PP_M1_ORIGINATOR'] = rowdata['PP_M1_ORIGINATOR']
-            item_list.append(temp_data)
-
-        cursor.close()
-        db.close()
-
-        data = {"searchList": item_list, }
-        return JsonResponse(data, safe=False)
+    return JsonResponse(data={}, safe=False)
 
 
 def covert_option_type(option):
@@ -440,97 +290,20 @@ def conversionData(psc_data, key, value):
 
 @api_view(['GET'])
 def gpsContractNumberSearch(request, site):
-    search_item = request.GET.get('search_item', 'INTERFACE_ID')
-    search_text = request.GET.get('search_text', '')
 
-    if len(search_text) < 3:
-        raise exceptions.ParseError("Please, input more than 3 digits.")
-
-    # TODO : (PUGPS I/F) GP CONTRACT NUMBER 검색 INTERFACE 추가 후 수정
-    try:
-        db = cx_Oracle.connect("DISPLAY", "DISPLAY", "156.147.147.223:1530/LGCRNP")
-    except:
-        raise exceptions.ParseError("Can not connect Oracle DB.")
-
-    sql = f""" SELECT CNTRT_NO, CNTRT_NAME, SUPPLIER_NAME, CNTRT_CURRENCY, CNTRT_AMT, CNTRT_DATE, CNTRT_USER_NAME
-                FROM XXEVF_GPS_CONTRACT_R_IF
-                WHERE {search_item} LIKE '{search_text}%'
-            """
-    cursor = db.cursor()
-    cursor.execute(sql)
-    cursor.rowfactory = make_dict(cursor)
-    alldata = cursor.fetchall()
-    cursor.close()
-
-    data = {"searchList": alldata}
-    return JsonResponse(data, safe=False)
+    return JsonResponse(data={}, safe=False)
 
 
 @api_view(['GET'])
 def companySearch(request, site):
-    search_text = request.GET.get('search_text', '')
-    if len(search_text) < 2:
-        raise exceptions.ParseError("Please, input more than 2 digits.")
 
-    # TODO : (MDMS I/F) SUPPLIER_CODE 검색 INTERFACE 추가 후 수정
-    try:
-        db = cx_Oracle.connect("DISPLAY", "DISPLAY", "156.147.147.223:1530/LGCRNP")
-    except:
-        data = "Can not connect Oracle DB."
-        return JsonResponse(data, safe=False)
-
-    if request.preset["user_lang"] == "kr":
-        search_codition = f"""(SUPPLIER_CODE LIKE '{search_text}%' OR
-                               SUPPLIER_LOCAL_NAME LIKE '{search_text}%' 
-                               OR BIZ_REGISTER_NO LIKE '{search_text}%')"""
-    else:
-        search_codition = f"""( SUPPLIER_CODE LIKE '{search_text}%' OR 
-                                SUPPLIER_ENGLISH_NAME LIKE '{search_text}%' OR 
-                                BIZ_REGISTER_NO LIKE '{search_text}%')"""
-    sql = f""" SELECT SUPPLIER_CODE, SUPPLIER_ENGLISH_NAME, SUPPLIER_LOCAL_NAME, BIZ_REGISTER_NO,
-               REPRESENTATIVE_LOCAL_NAME , REPRESENTATIVE_LAST_NAME || ' ' || REPRESENTATIVE_FIRST_NAME AS REPRESENTATIVE_ENGLISH_NAME
-               FROM IF_R_MDMS_SUPPLIER
-               WHERE {search_codition}
-            """
-    cursor = db.cursor()
-    cursor.execute(sql)
-    cursor.rowfactory = make_dict(cursor)
-    alldata = cursor.fetchall()
-    cursor.close()
-
-    data = {"searchList": alldata}
-    return JsonResponse(data, safe=False)
+    return JsonResponse(data={}, safe=False)
 
 
 @api_view(['GET'])
 def gpsItemCategorySearch(request, site):
-    search_text = request.GET.get('search_text', '')
-    if len(search_text) < 3:
-        raise exceptions.ParseError("Please, input more than 3 digits.")
 
-    # TODO : (PUGPS I/F) GP ITEM CATEGORY 검색 INTERFACE 추가 후 수정
-    try:
-        db = cx_Oracle.connect("DISPLAY", "DISPLAY", "156.147.147.223:1530/LGCRNP")
-    except:
-        data = "Can not connect Oracle DB."
-        return JsonResponse(data, safe=False)
-
-    sql = f""" SELECT
-                ( SELECT MAX(SRC_GRP_NAME) FROM IF_S_CMDT_INFO WHERE SRC_GRP_CD = ROUND(A.SRC_GRP_CD/1000000, 0) * 1000000 AND USE_YN = 'Y' )  AS LEVEL1_NAME ,
-                ( SELECT MAX(SRC_GRP_NAME) FROM IF_S_CMDT_INFO WHERE SRC_GRP_CD = ROUND(A.SRC_GRP_CD/10000, 0) * 10000 AND USE_YN = 'Y' )  AS LEVEL2_NAME ,
-                ( SELECT MAX(SRC_GRP_NAME) FROM IF_S_CMDT_INFO WHERE SRC_GRP_CD = ROUND(A.SRC_GRP_CD/100, 0) * 100 AND USE_YN = 'Y' )  AS LEVEL3_NAME 
-                , A.*
-                FROM IF_S_CMDT_INFO A
-                WHERE SG_LEVEL = '4' AND USE_YN='Y' AND SRC_GRP_NAME LIKE '{search_text}%'
-            """
-    cursor = db.cursor()
-    cursor.execute(sql)
-    cursor.rowfactory = make_dict(cursor)
-    alldata = cursor.fetchall()
-    cursor.close()
-
-    data = {"searchList": alldata}
-    return JsonResponse(data, safe=False)
+    return JsonResponse(data={}, safe=False)
 
 
 @api_view(['GET', 'PUT'])

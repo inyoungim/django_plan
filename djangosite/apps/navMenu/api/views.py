@@ -1,4 +1,3 @@
-import cx_Oracle
 from django.db import connection, connections
 from django.db.models import Case, When, F
 from django.http import JsonResponse
